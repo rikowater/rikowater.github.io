@@ -107,20 +107,29 @@
           <span>ヒント</span>
         </div>
 
-        <section class="control-panel" id="controlPanel" aria-label="PC操作">
-          <div class="control-panel-head">
-            <span>PC操作</span>
-            <output id="moveStatus">待機</output>
+        <div class="tilt-orb" aria-hidden="true">
+          <span class="tilt-ring"></span>
+          <span class="tilt-dot" id="tiltDot"></span>
+        </div>
+
+        <section class="gyro-panel" id="gyroPanel" aria-label="ジャイロ操作">
+          <div class="gyro-panel-head">
+            <span>ジャイロ操作</span>
+            <output id="gyroStatus">待機</output>
           </div>
-          <div class="move-pad" aria-label="移動ボタン">
-            <button class="move-button up" type="button" data-move="up" aria-label="上へ移動">↑</button>
-            <button class="move-button left" type="button" data-move="left" aria-label="左へ移動">←</button>
-            <button class="move-button right" type="button" data-move="right" aria-label="右へ移動">→</button>
-            <button class="move-button down" type="button" data-move="down" aria-label="下へ移動">↓</button>
-          </div>
-          <div class="control-actions">
-            <button type="button" id="panelResetButton">リセット</button>
-            <button type="button" id="panelHintButton">ヒント</button>
+          <label>
+            <span>X</span>
+            <input id="tiltXSlider" type="range" min="-100" max="100" value="0" />
+            <output id="tiltXValue">0.00</output>
+          </label>
+          <label>
+            <span>Y</span>
+            <input id="tiltYSlider" type="range" min="-100" max="100" value="0" />
+            <output id="tiltYValue">0.00</output>
+          </label>
+          <div class="gyro-actions">
+            <button type="button" id="deviceGyroButton">実機</button>
+            <button type="button" id="gyroCenterButton">中央</button>
           </div>
         </section>
 
