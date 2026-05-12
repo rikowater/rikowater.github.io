@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 108">
+  <defs>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#dffcff"/>
+      <stop offset=".32" stop-color="#dffcff" stop-opacity=".8"/>
+      <stop offset=".75" stop-color="#c7e8e8" stop-opacity=".45"/>
+      <stop offset="1" stop-color="#9fc0b4"/>
+    </radialGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="170%">
+      <feDropShadow dx="0" dy="8" stdDeviation="5" flood-color="#4d7478" flood-opacity=".2"/>
+      <feDropShadow dx="0" dy="0" stdDeviation="8" flood-color="#a8f1ff" flood-opacity=".42"/>
+    </filter>
+  </defs>
+  <path d="M90 4 176 54 90 104 4 54Z" fill="url(#glow)" filter="url(#shadow)"/>
+  <path d="M90 4 176 54 90 104 4 54Z" fill="none" stroke="#ffffff" stroke-opacity=".72" stroke-width="3"/>
+  <ellipse cx="90" cy="54" rx="34" ry="18" fill="none" stroke="#ebffff" stroke-width="5" opacity=".58"/>
+</svg>

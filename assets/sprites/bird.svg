@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180">
+  <defs>
+    <radialGradient id="body" cx="34%" cy="28%" r="72%">
+      <stop offset="0" stop-color="#fffbe4"/>
+      <stop offset=".58" stop-color="#f2d49a"/>
+      <stop offset="1" stop-color="#d9a96e"/>
+    </radialGradient>
+    <filter id="shadow" x="-35%" y="-30%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="9" stdDeviation="6" flood-color="#6d5a46" flood-opacity=".26"/>
+      <feDropShadow dx="0" dy="0" stdDeviation="6" flood-color="#ffe9a4" flood-opacity=".32"/>
+    </filter>
+  </defs>
+  <g filter="url(#shadow)">
+    <path d="M34 102c-18 0-25 12-26 26 20-4 34-1 48 9Z" fill="#bd7048"/>
+    <path d="M25 83c-16-10-20-23-16-38 19 12 33 23 42 44Z" fill="#cf8050"/>
+    <ellipse cx="91" cy="91" rx="57" ry="62" fill="url(#body)"/>
+    <circle cx="113" cy="66" r="35" fill="url(#body)"/>
+    <path d="M52 108c21 7 41 2 57-18-1 31-22 53-53 50Z" fill="#c9784c"/>
+    <path d="M142 72 168 84l-27 10Z" fill="#d99548"/>
+    <circle cx="127" cy="62" r="7" fill="#443d3a"/>
+    <circle cx="129" cy="59" r="2.2" fill="#fff"/>
+    <path d="M55 113c28 9 59 7 88-1l1 17c-35 9-68 8-99-2Z" fill="#b65f42"/>
+    <path d="M44 120c-11 5-19 16-22 35 17-7 28-15 35-29Z" fill="#b65f42"/>
+  </g>
+  <path d="M91 37c-9-13-8-22-1-31 10 12 18 22 19 37Z" fill="#d18a55"/>
+</svg>

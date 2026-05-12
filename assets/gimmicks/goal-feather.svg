@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 190">
+  <defs>
+    <linearGradient id="feather" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset=".42" stop-color="#c7f3ff"/>
+      <stop offset="1" stop-color="#75bedb"/>
+    </linearGradient>
+    <filter id="glow" x="-70%" y="-50%" width="240%" height="230%">
+      <feDropShadow dx="0" dy="0" stdDeviation="8" flood-color="#c4f7ff" flood-opacity=".95"/>
+      <feDropShadow dx="0" dy="10" stdDeviation="5" flood-color="#4f747a" flood-opacity=".25"/>
+    </filter>
+  </defs>
+  <path d="M65 4c39 10 41 55 23 88-12 23-28 42-49 85 1-34-5-49-14-67C8 76 31 23 65 4Z" fill="url(#feather)" filter="url(#glow)"/>
+  <path d="M65 13c-2 48-13 89-31 144" stroke="#5fa6c7" stroke-width="5" stroke-linecap="round" opacity=".58"/>
+  <path d="M55 50c-14 8-23 19-31 34m36-6c-16 8-28 21-38 40m46-8c-12 6-21 16-28 30" stroke="#ffffff" stroke-width="4" stroke-linecap="round" opacity=".6"/>
+</svg>

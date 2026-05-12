@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 160">
+  <defs>
+    <linearGradient id="crystal" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f4d9ff"/>
+      <stop offset=".45" stop-color="#a76cff"/>
+      <stop offset="1" stop-color="#704fd2"/>
+    </linearGradient>
+    <filter id="glow" x="-60%" y="-40%" width="220%" height="220%">
+      <feDropShadow dx="0" dy="9" stdDeviation="5" flood-color="#4f3f88" flood-opacity=".28"/>
+      <feDropShadow dx="0" dy="0" stdDeviation="10" flood-color="#c39aff" flood-opacity=".65"/>
+    </filter>
+  </defs>
+  <path d="M60 5 105 54 78 150H42L15 54Z" fill="url(#crystal)" filter="url(#glow)"/>
+  <path d="M60 5v145M15 54h90M60 5 42 150M60 5l18 145" stroke="#fffaff" stroke-opacity=".42" stroke-width="4"/>
+  <path d="M32 53 60 16v110Z" fill="#ffffff" opacity=".25"/>
+</svg>
