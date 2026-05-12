@@ -23,51 +23,6 @@
           <span></span><span></span><span></span>
         </div>
 
-        <header class="hud hud-top">
-          <div class="mission-block">
-            <div class="stage-heading">
-              <svg viewBox="0 0 32 32" aria-hidden="true">
-                <path d="M26.3 4.6C15.8 5.1 8.9 10.8 6.8 20.7c3.9-.7 6.8-2.2 8.8-4.3-1.2 3.2-3.4 5.9-6.5 8.1l1.2 2.4c3.3-2.1 5.8-5.2 7.5-9.2 2.9-.4 6.9-3.4 8.5-13.1Z" />
-              </svg>
-              <span>ステージ 2-7</span>
-              <span>風のつなぐ道</span>
-            </div>
-            <div class="thread-line" aria-hidden="true"></div>
-            <p>
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M12 3.1c1.5 3.5 3.7 5.7 7.3 7.2-3.6 1.5-5.8 3.7-7.3 7.3-1.5-3.6-3.7-5.8-7.2-7.3 3.5-1.5 5.7-3.7 7.2-7.2Z" />
-                <path d="M5.4 16.8c.8 1.8 1.8 2.8 3.6 3.6-1.8.8-2.8 1.8-3.6 3.6-.8-1.8-1.8-2.8-3.6-3.6 1.8-.8 2.8-1.8 3.6-3.6Z" />
-              </svg>
-              <span>風をうまく使って、<br />光の道をゴールまでつなごう。</span>
-            </p>
-          </div>
-
-          <div class="distance-block" aria-label="のこり距離">
-            <div class="distance-label">
-              <svg viewBox="0 0 32 32" aria-hidden="true">
-                <path d="M26.3 4.6C15.8 5.1 8.9 10.8 6.8 20.7c3.9-.7 6.8-2.2 8.8-4.3-1.2 3.2-3.4 5.9-6.5 8.1l1.2 2.4c3.3-2.1 5.8-5.2 7.5-9.2 2.9-.4 6.9-3.4 8.5-13.1Z" />
-              </svg>
-              <span>のこり距離</span>
-            </div>
-            <div class="feather-track" aria-hidden="true">
-              <span class="feather active"></span>
-              <span class="feather active"></span>
-              <span class="feather active"></span>
-              <span class="feather active"></span>
-              <span class="feather active"></span>
-              <span class="feather dim"></span>
-              <span class="feather dim"></span>
-              <span class="dot"></span>
-              <span class="dot"></span>
-              <span class="dot"></span>
-            </div>
-          </div>
-
-          <button class="round-button menu-button" type="button" aria-label="メニュー">
-            <span></span><span></span><span></span>
-          </button>
-        </header>
-
         <section class="playfield" id="playfield" aria-label="雲の上のパズル盤面">
           <svg class="trail-layer" viewBox="0 0 1000 560" preserveAspectRatio="none" aria-hidden="true">
             <path class="gold-trail trail-main" d="M142 344 C235 314 292 275 354 245 C414 216 452 210 504 230" />
@@ -95,7 +50,6 @@
               <path d="M22.2 3.8v6.4h-6.4" />
             </svg>
           </button>
-          <span>リセット</span>
         </div>
 
         <div class="bottom-control bottom-right">
@@ -104,17 +58,9 @@
               <path d="M26.3 4.6C15.8 5.1 8.9 10.8 6.8 20.7c3.9-.7 6.8-2.2 8.8-4.3-1.2 3.2-3.4 5.9-6.5 8.1l1.2 2.4c3.3-2.1 5.8-5.2 7.5-9.2 2.9-.4 6.9-3.4 8.5-13.1Z" />
             </svg>
           </button>
-          <span>ヒント</span>
         </div>
 
         <div class="stage-toast" id="stageToast" role="status" aria-live="polite"></div>
-
-        <div class="pause-panel" id="pausePanel" aria-hidden="true">
-          <div class="pause-inner">
-            <span>旅の途中</span>
-            <button type="button" id="resumeButton">戻る</button>
-          </div>
-        </div>
       </section>
     </main>
 

@@ -29,9 +29,6 @@ const featureByCell = {
 };
 
 const assetPaths = {
-  floor: "./assets/tiles/floor.svg",
-  start: "./assets/tiles/floor-start.svg",
-  goalFloor: "./assets/tiles/floor-goal.svg",
   cloud: "./assets/tiles/cloud-wall.svg",
   crystal: "./assets/gimmicks/crystal.svg",
   vortex: "./assets/gimmicks/vortex.svg",
@@ -40,26 +37,35 @@ const assetPaths = {
   spark: "./assets/gimmicks/spark.svg"
 };
 
-const directions = {
-  up: { col: 0, row: -1, label: "上" },
-  down: { col: 0, row: 1, label: "下" },
-  left: { col: -1, row: 0, label: "左" },
-  right: { col: 1, row: 0, label: "右" }
+const keyToVector = {
+  ArrowUp: { x: 0, y: -1 },
+  w: { x: 0, y: -1 },
+  W: { x: 0, y: -1 },
+  ArrowDown: { x: 0, y: 1 },
+  s: { x: 0, y: 1 },
+  S: { x: 0, y: 1 },
+  ArrowLeft: { x: -1, y: 0 },
+  a: { x: -1, y: 0 },
+  A: { x: -1, y: 0 },
+  ArrowRight: { x: 1, y: 0 },
+  d: { x: 1, y: 0 },
+  D: { x: 1, y: 0 }
 };
 
-const keyToDirection = {
-  ArrowUp: "up",
-  w: "up",
-  W: "up",
-  ArrowDown: "down",
-  s: "down",
-  S: "down",
-  ArrowLeft: "left",
-  a: "left",
-  A: "left",
-  ArrowRight: "right",
-  d: "right",
-  D: "right"
+const directionLabels = {
+  up: "上",
+  down: "下",
+  left: "左",
+  right: "右"
+};
+
+const rowCount = stageMap.length;
+const colCount = Math.max(...stageMap.map((row) => row.length));
+const boardFrame = {
+  left: 7.2,
+  top: 6.2,
+  width: 85.6,
+  height: 85.2
 };
 
 const makeElement = (className, tag = "div") => {
@@ -68,17 +74,17 @@ const makeElement = (className, tag = "div") => {
   return element;
 };
 
-const isoPosition = (col, row) => ({
-  x: 45.6 + (col - row) * 3.72,
-  y: 9.2 + (col + row) * 4.55
+const boardPosition = (col, row) => ({
+  x: boardFrame.left + ((col + 0.5) / colCount) * boardFrame.width,
+  y: boardFrame.top + ((row + 0.5) / rowCount) * boardFrame.height
 });
 
-const addIsoItem = (className, col, row, innerHTML = "") => {
+const addBoardItem = (className, col, row, innerHTML = "") => {
   const item = makeElement(`iso-item ${className}`);
-  const pos = isoPosition(col, row);
+  const pos = boardPosition(col, row);
   item.style.setProperty("--iso-x", `${pos.x}%`);
   item.style.setProperty("--iso-y", `${pos.y}%`);
-  item.style.zIndex = String(100 + (col + row) * 4);
+  item.style.zIndex = String(100 + row * 12 + col);
   item.innerHTML = innerHTML;
   boardLayer.appendChild(item);
   return item;
@@ -87,7 +93,7 @@ const addIsoItem = (className, col, row, innerHTML = "") => {
 const assetMarkup = (src) => `<img class="asset-img" src="${src}" alt="" />`;
 
 const findCell = (target) => {
-  for (let row = 0; row < stageMap.length; row += 1) {
+  for (let row = 0; row < rowCount; row += 1) {
     const col = stageMap[row].indexOf(target);
     if (col !== -1) return { col, row };
   }
@@ -95,14 +101,40 @@ const findCell = (target) => {
 };
 
 const cellAt = (col, row) => stageMap[row]?.[col] || " ";
-const isWalkable = (col, row) => {
+
+const cellForPosition = (col, row) => ({
+  col: Math.floor(col + 0.5),
+  row: Math.floor(row + 0.5)
+});
+
+const isWalkableCell = (col, row) => {
   const cell = cellAt(col, row);
   return cell !== " " && cell !== "#";
 };
 
+const playerRadius = 0.26;
+const canOccupy = (col, row) => {
+  const samples = [
+    [0, 0],
+    [playerRadius, 0],
+    [-playerRadius, 0],
+    [0, playerRadius],
+    [0, -playerRadius],
+    [playerRadius * 0.72, playerRadius * 0.72],
+    [-playerRadius * 0.72, playerRadius * 0.72],
+    [playerRadius * 0.72, -playerRadius * 0.72],
+    [-playerRadius * 0.72, -playerRadius * 0.72]
+  ];
+
+  return samples.every(([offsetCol, offsetRow]) => {
+    const cell = cellForPosition(col + offsetCol, row + offsetRow);
+    return isWalkableCell(cell.col, cell.row);
+  });
+};
+
 const startCell = findCell("B");
 const goalCell = findCell("G");
-let playerCell = { ...startCell };
+let playerPosition = { col: startCell.col, row: startCell.row };
 let stepCount = 0;
 let toastTimer;
 let controlStatus = "待機";
@@ -111,11 +143,12 @@ let tiltY = 0;
 let deviceGyroActive = false;
 let gyroEnableInProgress = false;
 let deviceBaseline = null;
-let lastGyroMoveAt = 0;
-let lastBlockedToastAt = 0;
-const gyroMoveThreshold = 0.22;
-const gyroMoveIntervalMin = 170;
-const gyroMoveIntervalMax = 640;
+let lastFrameAt = 0;
+let lastBlockedAt = 0;
+const pressedKeys = new Set();
+const keyHoldTimers = new Map();
+const inputDeadzone = 0.08;
+const maxCellsPerSecond = 3.25;
 const gyroTiltDegrees = 24;
 
 stageMap.forEach((rowString, row) => {
@@ -131,31 +164,30 @@ stageMap.forEach((rowString, row) => {
             : featureByCell[cell] === "sun"
               ? "pad"
               : "path";
-      const src = type === "start" ? assetPaths.start : type === "goal" ? assetPaths.goalFloor : assetPaths.floor;
-      addIsoItem(`floor-tile ${type} has-image`, col, row, assetMarkup(src));
+      addBoardItem(`floor-tile ${type}`, col, row);
     }
 
     if (cell === "#") {
-      addIsoItem(`cloud-wall ${(col + row) % 4 === 0 ? "soft" : ""} has-image`, col, row, assetMarkup(assetPaths.cloud));
+      addBoardItem(`cloud-wall ${(col + row) % 4 === 0 ? "soft" : ""} has-image`, col, row, assetMarkup(assetPaths.cloud));
     }
 
     if (cell === "C") {
-      addIsoItem("crystal has-image", col, row, assetMarkup(assetPaths.crystal));
-      addIsoItem("spark has-image", col + 0.36, row - 0.12, assetMarkup(assetPaths.spark));
+      addBoardItem("crystal has-image", col, row, assetMarkup(assetPaths.crystal));
+      addBoardItem("spark has-image", col + 0.32, row - 0.22, assetMarkup(assetPaths.spark));
     }
 
     if (cell === "V") {
-      addIsoItem("vortex has-image", col, row, assetMarkup(assetPaths.vortex));
+      addBoardItem("vortex has-image", col, row, assetMarkup(assetPaths.vortex));
     }
 
     if (cell === "S") {
-      addIsoItem("sun-stone has-image", col, row, assetMarkup(assetPaths.sun));
-      addIsoItem("spark has-image", col - 0.32, row + 0.05, assetMarkup(assetPaths.spark));
+      addBoardItem("sun-stone has-image", col, row, assetMarkup(assetPaths.sun));
+      addBoardItem("spark has-image", col - 0.28, row + 0.18, assetMarkup(assetPaths.spark));
     }
 
     if (cell === "G") {
-      addIsoItem("goal-feather has-image", col, row, assetMarkup(assetPaths.goalFeather));
-      addIsoItem("spark has-image", col + 0.28, row - 0.24, assetMarkup(assetPaths.spark));
+      addBoardItem("goal-feather has-image", col, row, assetMarkup(assetPaths.goalFeather));
+      addBoardItem("spark has-image", col + 0.3, row - 0.18, assetMarkup(assetPaths.spark));
     }
   });
 });
@@ -167,56 +199,51 @@ const showToast = (message) => {
   stageToast.classList.add("is-visible");
   toastTimer = window.setTimeout(() => {
     stageToast.classList.remove("is-visible");
-  }, 1600);
+  }, 900);
 };
 
-const setGyroStatus = (message) => {
+const focusGameInput = () => {
+  if (!gameScreen) return;
+  gameScreen.setAttribute("tabindex", "0");
+  gameScreen.focus({ preventScroll: true });
+};
+
+const setControlStatus = (message) => {
   controlStatus = message;
   if (gameScreen) gameScreen.dataset.controlStatus = message;
 };
 
-const placeMarker = (element, cell, xName, yName) => {
+const placeMarker = (element, position, xName, yName) => {
   if (!element) return;
-  const pos = isoPosition(cell.col, cell.row);
+  const pos = boardPosition(position.col, position.row);
   element.style.setProperty(xName, `${pos.x}%`);
   element.style.setProperty(yName, `${pos.y}%`);
 };
 
 const updatePlayer = () => {
-  placeMarker(pcBird, playerCell, "--player-x", "--player-y");
+  placeMarker(pcBird, playerPosition, "--player-x", "--player-y");
   placeMarker(goalMarker, goalCell, "--goal-x", "--goal-y");
 };
 
-const clampTilt = (value) => Math.max(-1, Math.min(1, value));
-
-const clamp01 = (value) => Math.max(0, Math.min(1, value));
-
-const tiltStrength = () => Math.max(Math.abs(tiltX), Math.abs(tiltY));
-
-const currentGyroMoveInterval = () => {
-  const normalizedStrength = clamp01((tiltStrength() - gyroMoveThreshold) / (1 - gyroMoveThreshold));
-  const easedStrength = 1 - (1 - normalizedStrength) ** 2;
-  return gyroMoveIntervalMax - (gyroMoveIntervalMax - gyroMoveIntervalMin) * easedStrength;
-};
-
-const directionFromTilt = () => {
-  const absX = Math.abs(tiltX);
-  const absY = Math.abs(tiltY);
-  if (Math.max(absX, absY) < gyroMoveThreshold) return null;
-  if (absX >= absY) return tiltX > 0 ? "right" : "left";
-  return tiltY > 0 ? "down" : "up";
-};
+const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+const clampTilt = (value) => clamp(value, -1, 1);
 
 const setTilt = (nextX, nextY, source = "実機") => {
   tiltX = clampTilt(nextX);
   tiltY = clampTilt(nextY);
-  gameScreen.style.setProperty("--tilt-x", tiltX.toFixed(3));
-  gameScreen.style.setProperty("--tilt-y", tiltY.toFixed(3));
-  gameScreen.style.setProperty("--scene-offset-x", `${(-tiltX * 5).toFixed(2)}px`);
-  gameScreen.style.setProperty("--scene-offset-y", `${(-tiltY * 4).toFixed(2)}px`);
+  gameScreen.style.setProperty("--scene-offset-x", `${(-tiltX * 4.5).toFixed(2)}px`);
+  gameScreen.style.setProperty("--scene-offset-y", `${(-tiltY * 3.5).toFixed(2)}px`);
   if (pcBird) pcBird.style.setProperty("--lean", tiltX.toFixed(3));
-  const directionName = directionFromTilt();
-  setGyroStatus(directionName ? `${source}: ${directions[directionName].label}` : "待機");
+  const directionName = dominantDirection({ x: tiltX, y: tiltY });
+  setControlStatus(directionName ? `${source}: ${directionLabels[directionName]}` : "待機");
+};
+
+const dominantDirection = ({ x, y }) => {
+  const absX = Math.abs(x);
+  const absY = Math.abs(y);
+  if (Math.max(absX, absY) < inputDeadzone) return null;
+  if (absX >= absY) return x > 0 ? "right" : "left";
+  return y > 0 ? "down" : "up";
 };
 
 const popClass = (element, className, duration = 260) => {
@@ -228,67 +255,145 @@ const popClass = (element, className, duration = 260) => {
   });
 };
 
-const showBlockedToast = () => {
-  const now = Date.now();
-  if (now - lastBlockedToastAt < 900) return;
-  lastBlockedToastAt = now;
-  showToast("雲の壁にぶつかった");
+const currentKeyboardVector = () => {
+  const vector = { x: 0, y: 0 };
+  pressedKeys.forEach((key) => {
+    const keyVector = keyToVector[key];
+    if (!keyVector) return;
+    vector.x += keyVector.x;
+    vector.y += keyVector.y;
+  });
+  return normalizeVector(vector);
 };
 
-const movePlayer = (directionName) => {
-  const direction = directions[directionName];
-  if (!direction) return;
-
-  const nextCell = {
-    col: playerCell.col + direction.col,
-    row: playerCell.row + direction.row
+const normalizeVector = ({ x, y }) => {
+  const magnitude = Math.hypot(x, y);
+  if (magnitude <= inputDeadzone) return { x: 0, y: 0, strength: 0 };
+  const cappedMagnitude = Math.min(1, magnitude);
+  return {
+    x: x / magnitude,
+    y: y / magnitude,
+    strength: cappedMagnitude
   };
+};
 
-  if (!isWalkable(nextCell.col, nextCell.row)) {
-    popClass(pcBird, "is-blocked", 280);
-    setGyroStatus("進めない");
-    showBlockedToast();
-    return;
+const currentMoveVector = () => {
+  const keyboardVector = currentKeyboardVector();
+  if (keyboardVector.strength > 0) return keyboardVector;
+  return normalizeVector({ x: tiltX, y: tiltY });
+};
+
+const showBlockedFeedback = () => {
+  const now = Date.now();
+  if (now - lastBlockedAt < 260) return;
+  lastBlockedAt = now;
+  popClass(pcBird, "is-blocked", 220);
+};
+
+const tryMovePlayer = (deltaCol, deltaRow) => {
+  let moved = false;
+  const nextCol = playerPosition.col + deltaCol;
+  if (canOccupy(nextCol, playerPosition.row)) {
+    playerPosition.col = nextCol;
+    moved = true;
   }
 
-  playerCell = nextCell;
-  stepCount += 1;
-  updatePlayer();
-  popClass(pcBird, "is-moving", 260);
-  setGyroStatus(`${stepCount}手目`);
+  const nextRow = playerPosition.row + deltaRow;
+  if (canOccupy(playerPosition.col, nextRow)) {
+    playerPosition.row = nextRow;
+    moved = true;
+  }
 
-  if (cellAt(playerCell.col, playerCell.row) === "G") {
-    pcBird?.classList.add("is-goal");
-    setGyroStatus("到着");
-    showToast("光の道がつながった");
+  if (!moved && (Math.abs(deltaCol) > 0 || Math.abs(deltaRow) > 0)) {
+    showBlockedFeedback();
+  }
+
+  return moved;
+};
+
+const pulseKeyboardMove = (key) => {
+  const keyVector = keyToVector[key];
+  if (!keyVector) return;
+  const moved = tryMovePlayer(keyVector.x * 0.12, keyVector.y * 0.12);
+  if (!moved) return;
+  updatePlayer();
+  updateGoalState();
+};
+
+const updateGoalState = () => {
+  const distanceToGoal = Math.hypot(playerPosition.col - goalCell.col, playerPosition.row - goalCell.row);
+  if (distanceToGoal < 0.42) {
+    if (!pcBird?.classList.contains("is-goal")) {
+      pcBird?.classList.add("is-goal");
+      setControlStatus("到着");
+    }
   } else {
     pcBird?.classList.remove("is-goal");
   }
 };
 
+const animatePlayer = (timestamp) => {
+  if (!lastFrameAt) lastFrameAt = timestamp;
+  const deltaSeconds = Math.min(0.04, (timestamp - lastFrameAt) / 1000);
+  lastFrameAt = timestamp;
+
+  const moveVector = currentMoveVector();
+  if (moveVector.strength > 0) {
+    const speed = maxCellsPerSecond * moveVector.strength;
+    const moved = tryMovePlayer(moveVector.x * speed * deltaSeconds, moveVector.y * speed * deltaSeconds);
+    if (moved) {
+      stepCount += deltaSeconds;
+      pcBird?.classList.add("is-moving");
+      window.clearTimeout(animatePlayer.moveTimer);
+      animatePlayer.moveTimer = window.setTimeout(() => pcBird?.classList.remove("is-moving"), 120);
+      setControlStatus(dominantDirection(moveVector) || "移動中");
+    }
+  }
+
+  updatePlayer();
+  updateGoalState();
+  window.requestAnimationFrame(animatePlayer);
+};
+
 const resetStage = () => {
   clearTilt();
-  playerCell = { ...startCell };
+  pressedKeys.clear();
+  keyHoldTimers.forEach((timer) => window.clearTimeout(timer));
+  keyHoldTimers.clear();
+  playerPosition = { col: startCell.col, row: startCell.row };
   stepCount = 0;
   updatePlayer();
   pcBird?.classList.remove("is-goal", "is-blocked", "is-moving");
   popClass(pcBird, "reset-pop", 620);
-  setGyroStatus("待機");
-  showToast("出発点に戻った");
+  setControlStatus("待機");
 };
 
-document.querySelectorAll("[data-move]").forEach((button) => {
-  button.addEventListener("click", () => {
-    movePlayer(button.dataset.move);
-    button.blur();
-  });
+window.addEventListener("keydown", (event) => {
+  if (!keyToVector[event.key]) return;
+  event.preventDefault();
+  pressedKeys.add(event.key);
+  pulseKeyboardMove(event.key);
+  window.clearTimeout(keyHoldTimers.get(event.key));
+  keyHoldTimers.set(
+    event.key,
+    window.setTimeout(() => {
+      pressedKeys.delete(event.key);
+      keyHoldTimers.delete(event.key);
+    }, 180)
+  );
 });
 
-window.addEventListener("keydown", (event) => {
-  const directionName = keyToDirection[event.key];
-  if (!directionName) return;
+window.addEventListener("keyup", (event) => {
+  if (!keyToVector[event.key]) return;
   event.preventDefault();
-  movePlayer(directionName);
+  window.clearTimeout(keyHoldTimers.get(event.key));
+  keyHoldTimers.set(
+    event.key,
+    window.setTimeout(() => {
+      pressedKeys.delete(event.key);
+      keyHoldTimers.delete(event.key);
+    }, 90)
+  );
 });
 
 const stopDeviceGyro = () => {
@@ -301,7 +406,6 @@ const stopDeviceGyro = () => {
 const clearTilt = () => {
   setTilt(0, 0, "実機");
   deviceBaseline = null;
-  lastGyroMoveAt = 0;
 };
 
 const screenAngle = () => {
@@ -339,8 +443,7 @@ const enableDeviceGyro = async () => {
   if (deviceGyroActive || gyroEnableInProgress) return;
 
   if (typeof window.DeviceOrientationEvent === "undefined") {
-    setGyroStatus("未対応");
-    showToast("この端末では傾きセンサーを取得できません");
+    setControlStatus("キーボード");
     return;
   }
 
@@ -349,8 +452,7 @@ const enableDeviceGyro = async () => {
     if (typeof window.DeviceOrientationEvent.requestPermission === "function") {
       const permission = await window.DeviceOrientationEvent.requestPermission();
       if (permission !== "granted") {
-        setGyroStatus("未許可");
-        showToast("傾きセンサーが許可されませんでした");
+        setControlStatus("未許可");
         return;
       }
     }
@@ -358,28 +460,26 @@ const enableDeviceGyro = async () => {
     deviceBaseline = null;
     window.addEventListener("deviceorientation", handleDeviceOrientation);
     deviceGyroActive = true;
-    setGyroStatus("実機待ち");
-    showToast("そのまま傾けて進もう");
+    setControlStatus("実機待ち");
   } catch (error) {
-    setGyroStatus("未許可");
-    showToast("傾きセンサーを開始できませんでした");
+    setControlStatus("未許可");
   } finally {
     gyroEnableInProgress = false;
   }
 };
 
 const handleGyroStartGesture = () => {
+  focusGameInput();
   void enableDeviceGyro();
 };
 
 const bindGyroStart = () => {
   if (typeof window.DeviceOrientationEvent === "undefined") {
-    setGyroStatus("キーボード");
+    setControlStatus("キーボード");
     return;
   }
 
   if (typeof window.DeviceOrientationEvent.requestPermission === "function") {
-    showToast("画面をタップして傾き操作を開始");
     window.addEventListener("pointerdown", handleGyroStartGesture, { once: true });
     window.addEventListener("touchend", handleGyroStartGesture, { once: true });
     return;
@@ -388,50 +488,33 @@ const bindGyroStart = () => {
   void enableDeviceGyro();
 };
 
-const tickGyroMovement = () => {
-  if (cellAt(playerCell.col, playerCell.row) === "G") return;
-  const directionName = directionFromTilt();
-  if (!directionName) return;
-  const now = Date.now();
-  if (now - lastGyroMoveAt < currentGyroMoveInterval()) return;
-  lastGyroMoveAt = now;
-  movePlayer(directionName);
-};
-
 const resetGyroBaseline = () => {
   if (!deviceGyroActive) return;
   clearTilt();
 };
 
-window.addEventListener("orientationchange", resetGyroBaseline);
-window.screen?.orientation?.addEventListener?.("change", resetGyroBaseline);
-window.setInterval(tickGyroMovement, 80);
-
-resetButton.addEventListener("click", resetStage);
-
-const showHint = () => {
+resetButton?.addEventListener("click", resetStage);
+hintButton?.addEventListener("click", () => {
   gameScreen.classList.add("hinting");
-  setGyroStatus("光へ");
-  showToast("青い羽根を目指そう");
-  window.setTimeout(() => gameScreen.classList.remove("hinting"), 2400);
-};
-
-hintButton.addEventListener("click", showHint);
-
-menuButton.addEventListener("click", () => {
+  window.setTimeout(() => gameScreen.classList.remove("hinting"), 1600);
+});
+menuButton?.addEventListener("click", () => {
   pausePanel.classList.add("is-open");
   pausePanel.setAttribute("aria-hidden", "false");
 });
-
-resumeButton.addEventListener("click", () => {
+resumeButton?.addEventListener("click", () => {
   pausePanel.classList.remove("is-open");
   pausePanel.setAttribute("aria-hidden", "true");
 });
-
-pausePanel.addEventListener("click", (event) => {
+pausePanel?.addEventListener("click", (event) => {
   if (event.target === pausePanel) resumeButton.click();
 });
+window.addEventListener("orientationchange", resetGyroBaseline);
+window.screen?.orientation?.addEventListener?.("change", resetGyroBaseline);
+window.addEventListener("pointerdown", focusGameInput);
 
 updatePlayer();
 setTilt(0, 0);
+focusGameInput();
 bindGyroStart();
+window.requestAnimationFrame(animatePlayer);

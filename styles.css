@@ -73,6 +73,10 @@ button {
     linear-gradient(145deg, #d9e9e6 0%, #bcdde8 43%, #e8e8d3 100%);
 }
 
+.game-screen:focus {
+  outline: none;
+}
+
 .concept-wash {
   position: absolute;
   inset: 0;
@@ -162,7 +166,7 @@ button {
   left: 2.2rem;
   right: 2.2rem;
   top: 1.6rem;
-  display: grid;
+  display: none;
   grid-template-columns: minmax(22rem, 32rem) 1fr auto;
   align-items: start;
   gap: 1.5rem;
@@ -345,20 +349,17 @@ button {
 }
 
 .playfield {
-  inset: 6.7rem 5.5rem 3.2rem;
+  inset: 0.65rem 1.35rem 0.75rem;
   z-index: 15;
   opacity: 1;
   mix-blend-mode: normal;
-  transform:
-    perspective(62rem)
-    rotateX(calc(var(--tilt-y, 0) * 1.9deg))
-    rotateY(calc(var(--tilt-x, 0) * -2.4deg));
+  transform: none;
   transform-origin: center;
   transition: transform 220ms ease-out;
 }
 
 .player-layer {
-  inset: 6.7rem 5.5rem 3.2rem;
+  inset: 0.65rem 1.35rem 0.75rem;
   z-index: 34;
   pointer-events: none;
 }
@@ -369,7 +370,7 @@ button {
   height: 100%;
   overflow: visible;
   z-index: 6;
-  opacity: 0.9;
+  opacity: 0.16;
   pointer-events: none;
 }
 
@@ -445,24 +446,32 @@ button {
   left: var(--iso-x);
   top: var(--iso-y);
   transform: translate(-50%, -50%);
-  transform-origin: 50% 76%;
+  transform-origin: 50% 50%;
 }
 
 .floor-tile {
-  width: clamp(4.4rem, 6.25vw, 7.4rem);
-  height: clamp(2.35rem, 3.35vw, 4rem);
-  filter: drop-shadow(0 0.25rem 0.22rem rgba(80, 103, 96, 0.12));
+  width: clamp(3.8rem, 5.75vw, 6.7rem);
+  height: clamp(3.35rem, 5.05vw, 5.9rem);
+  border-radius: 1.25rem;
+  background:
+    radial-gradient(circle at 34% 24%, rgba(255, 255, 255, 0.68), transparent 34%),
+    linear-gradient(145deg, rgba(249, 255, 245, 0.95), rgba(211, 234, 219, 0.9) 54%, rgba(143, 176, 153, 0.78));
+  box-shadow:
+    inset 0 0 0 0.12rem rgba(255, 255, 255, 0.5),
+    inset 0 -0.45rem 1.2rem rgba(103, 135, 115, 0.14),
+    0 0.42rem 0.5rem rgba(80, 103, 96, 0.12);
+  filter: none;
 }
 
 .floor-tile::after {
   content: "";
   position: absolute;
-  inset: 22% 17%;
-  clip-path: inherit;
+  inset: 0.42rem;
+  border-radius: 0.95rem;
   background:
-    linear-gradient(135deg, transparent 25%, rgba(255, 255, 255, 0.32) 26% 29%, transparent 30%),
-    linear-gradient(45deg, transparent 37%, rgba(123, 148, 124, 0.18) 38% 42%, transparent 43%);
-  opacity: 0.7;
+    linear-gradient(135deg, transparent 25%, rgba(255, 255, 255, 0.35) 26% 29%, transparent 30%),
+    linear-gradient(45deg, transparent 37%, rgba(123, 148, 124, 0.13) 38% 42%, transparent 43%);
+  opacity: 0.52;
 }
 
 .floor-tile.path {
@@ -472,7 +481,8 @@ button {
 
 .floor-tile.start {
   background:
-    linear-gradient(135deg, rgba(255, 251, 235, 0.96), rgba(236, 217, 166, 0.88) 48%, rgba(175, 158, 112, 0.72));
+    radial-gradient(circle at 34% 24%, rgba(255, 255, 255, 0.72), transparent 34%),
+    linear-gradient(145deg, rgba(255, 251, 235, 0.96), rgba(236, 217, 166, 0.88) 52%, rgba(175, 158, 112, 0.72));
 }
 
 .floor-tile.pad {
@@ -496,9 +506,9 @@ button {
 }
 
 .cloud-wall {
-  width: clamp(5.6rem, 7.65vw, 9rem);
-  height: clamp(3.65rem, 5.15vw, 6.2rem);
-  filter: drop-shadow(0 0.45rem 0.35rem rgba(84, 102, 104, 0.16));
+  width: clamp(4.9rem, 6.8vw, 7.9rem);
+  height: clamp(4.1rem, 5.75vw, 6.8rem);
+  filter: drop-shadow(0 0.45rem 0.38rem rgba(84, 102, 104, 0.16));
 }
 
 .cloud-wall .puff {
@@ -595,9 +605,9 @@ button {
 }
 
 .vortex {
-  width: clamp(4.2rem, 5.3vw, 6.1rem);
-  height: clamp(4.2rem, 5.3vw, 6.1rem);
-  transform: translate(-50%, -63%);
+  width: clamp(3.6rem, 4.8vw, 5.4rem);
+  height: clamp(3.6rem, 4.8vw, 5.4rem);
+  transform: translate(-50%, -50%);
   pointer-events: none;
   animation: spin 6s linear infinite;
 }
@@ -634,9 +644,9 @@ button {
 }
 
 .crystal {
-  width: clamp(2.2rem, 3.2vw, 3.8rem);
-  height: clamp(3rem, 4.4vw, 5.2rem);
-  transform: translate(-50%, -78%);
+  width: clamp(2rem, 2.9vw, 3.2rem);
+  height: clamp(2.8rem, 4vw, 4.6rem);
+  transform: translate(-50%, -66%);
   filter:
     drop-shadow(0 0.35rem 0.45rem rgba(74, 65, 106, 0.22))
     drop-shadow(0 0 0.75rem rgba(175, 118, 255, 0.55));
@@ -663,18 +673,18 @@ button {
 }
 
 .sun-stone {
-  width: clamp(3.1rem, 4.2vw, 5rem);
-  height: clamp(2.1rem, 2.9vw, 3.4rem);
-  transform: translate(-50%, -70%);
+  width: clamp(2.9rem, 3.8vw, 4.5rem);
+  height: clamp(2rem, 2.8vw, 3.25rem);
+  transform: translate(-50%, -50%);
   filter:
     drop-shadow(0 0 0.7rem rgba(255, 225, 116, 0.52))
     drop-shadow(0 0.4rem 0.35rem rgba(91, 83, 71, 0.14));
 }
 
 .goal-feather {
-  width: clamp(2.3rem, 3.1vw, 3.7rem);
-  height: clamp(4.5rem, 5.8vw, 6.8rem);
-  transform: translate(-40%, -105%) rotate(23deg);
+  width: clamp(2.1rem, 2.9vw, 3.4rem);
+  height: clamp(4.1rem, 5.3vw, 6.2rem);
+  transform: translate(-40%, -86%) rotate(23deg);
   transform-origin: 50% 100%;
   filter:
     drop-shadow(0 0 0.55rem rgba(185, 246, 255, 0.9))
@@ -723,11 +733,11 @@ button {
 }
 
 .bird-token {
-  width: clamp(4.1rem, 5.4vw, 6.3rem);
-  height: clamp(4.1rem, 5.4vw, 6.3rem);
+  width: clamp(5.4rem, 7.15vw, 8.2rem);
+  height: clamp(5.4rem, 7.15vw, 8.2rem);
   transform:
-    translate(-50%, -112%)
-    rotate(calc(var(--lean, 0) * 7deg));
+    translate(-50%, -62%)
+    rotate(calc(var(--lean, 0) * 5deg));
   filter:
     drop-shadow(0 0.45rem 0.35rem rgba(93, 77, 61, 0.22))
     drop-shadow(0 0 0.55rem rgba(255, 238, 164, 0.38));
@@ -736,15 +746,12 @@ button {
 
 .pc-bird {
   position: absolute;
-  width: clamp(2.7rem, 3.35vw, 4.5rem);
-  height: clamp(2.7rem, 3.35vw, 4.5rem);
+  width: clamp(4.3rem, 5.7vw, 6.8rem);
+  height: clamp(4.3rem, 5.7vw, 6.8rem);
   left: var(--player-x, 26%);
   top: var(--player-y, 58%);
   opacity: 1;
-  transition:
-    left 240ms cubic-bezier(0.2, 0.8, 0.2, 1),
-    top 240ms cubic-bezier(0.2, 0.8, 0.2, 1),
-    filter 180ms ease;
+  transition: filter 180ms ease;
 }
 
 .pc-bird img {
@@ -804,13 +811,13 @@ button {
 
 @keyframes resetPop {
   0% {
-    transform: translate(-50%, -112%) scale(0.86);
+    transform: translate(-50%, -62%) scale(0.86);
   }
   55% {
-    transform: translate(-50%, -118%) scale(1.08);
+    transform: translate(-50%, -68%) scale(1.08);
   }
   100% {
-    transform: translate(-50%, -112%) scale(1);
+    transform: translate(-50%, -62%) scale(1);
   }
 }
 
@@ -821,7 +828,7 @@ button {
   width: clamp(3.2rem, 4.6vw, 5rem);
   height: clamp(3.2rem, 4.6vw, 5rem);
   border-radius: 50%;
-  transform: translate(-50%, -68%);
+  transform: translate(-50%, -50%);
   background:
     radial-gradient(circle, rgba(194, 246, 255, 0.46) 0 18%, transparent 20%),
     conic-gradient(from 30deg, transparent 0 18%, rgba(206, 250, 255, 0.58) 19% 28%, transparent 29% 52%, rgba(206, 250, 255, 0.45) 53% 62%, transparent 63%);
@@ -833,11 +840,11 @@ button {
 @keyframes goalPulse {
   0%,
   100% {
-    transform: translate(-50%, -68%) scale(0.88);
+    transform: translate(-50%, -50%) scale(0.88);
     opacity: 0.54;
   }
   50% {
-    transform: translate(-50%, -68%) scale(1.08);
+    transform: translate(-50%, -50%) scale(1.08);
     opacity: 0.92;
   }
 }
@@ -1071,33 +1078,37 @@ button {
   z-index: 32;
   display: grid;
   justify-items: center;
-  gap: 0.45rem;
+  gap: 0;
   color: rgba(96, 83, 73, 0.92);
   text-shadow: 0 0.08rem 0 rgba(255, 255, 255, 0.64);
-  font-size: 1rem;
+  font-size: 0;
   font-weight: 800;
   letter-spacing: 0.08rem;
-  opacity: 1;
+  opacity: 0.58;
+}
+
+.bottom-control span {
+  display: none;
 }
 
 .bottom-left {
-  left: 2.3rem;
-  bottom: 1.65rem;
+  left: 1.2rem;
+  bottom: 1rem;
 }
 
 .bottom-right {
-  right: 2.3rem;
-  bottom: 1.65rem;
+  right: 1.2rem;
+  bottom: 1rem;
 }
 
 .action-button {
-  width: 4.25rem;
-  height: 4.25rem;
+  width: 3.1rem;
+  height: 3.1rem;
 }
 
 .action-button svg {
-  width: 2.1rem;
-  height: 2.1rem;
+  width: 1.55rem;
+  height: 1.55rem;
   fill: none;
   stroke: currentColor;
   stroke-linecap: round;
@@ -1123,6 +1134,7 @@ button {
 }
 
 .stage-toast {
+  display: none;
   left: 50%;
   top: 8.5rem;
   z-index: 42;
@@ -1210,66 +1222,14 @@ button {
     height: 100vh;
   }
 
-  .hud-top {
-    left: 1.2rem;
-    right: 1.2rem;
-    top: 1rem;
-    grid-template-columns: minmax(18rem, 26rem) 1fr auto;
-  }
-
-  .stage-heading {
-    font-size: 1.18rem;
-    gap: 0.75rem;
-  }
-
-  .mission-block p {
-    font-size: 0.94rem;
-    line-height: 1.68;
-  }
-
-  .thread-line {
-    margin: 0.55rem 0 0.85rem;
-  }
-
-  .distance-block {
-    min-width: 16rem;
-  }
-
-  .distance-label {
-    font-size: 0.86rem;
-  }
-
-  .feather-track {
-    gap: 0.34rem;
-  }
-
-  .feather {
-    width: 0.82rem;
-    height: 1.28rem;
-  }
-
-  .dot {
-    width: 0.5rem;
-    height: 0.5rem;
-  }
-
-  .menu-button {
-    width: 3.1rem;
-    height: 3.1rem;
-  }
-
   .playfield,
   .player-layer {
-    inset: 5.1rem 4.2rem 2.5rem;
+    inset: 0.45rem 0.8rem 0.5rem;
   }
 
   .action-button {
-    width: 3.35rem;
-    height: 3.35rem;
-  }
-
-  .bottom-control {
-    font-size: 0.82rem;
+    width: 2.65rem;
+    height: 2.65rem;
   }
 
 }
