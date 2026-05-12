@@ -107,32 +107,6 @@
           <span>ヒント</span>
         </div>
 
-        <div class="tilt-orb" aria-hidden="true">
-          <span class="tilt-ring"></span>
-          <span class="tilt-dot" id="tiltDot"></span>
-        </div>
-
-        <section class="gyro-panel" id="gyroPanel" aria-label="ジャイロ操作">
-          <div class="gyro-panel-head">
-            <span>ジャイロ操作</span>
-            <output id="gyroStatus">待機</output>
-          </div>
-          <label>
-            <span>X</span>
-            <input id="tiltXSlider" type="range" min="-100" max="100" value="0" />
-            <output id="tiltXValue">0.00</output>
-          </label>
-          <label>
-            <span>Y</span>
-            <input id="tiltYSlider" type="range" min="-100" max="100" value="0" />
-            <output id="tiltYValue">0.00</output>
-          </label>
-          <div class="gyro-actions">
-            <button type="button" id="deviceGyroButton">実機</button>
-            <button type="button" id="gyroCenterButton">中央</button>
-          </div>
-        </section>
-
         <div class="stage-toast" id="stageToast" role="status" aria-live="polite"></div>
 
         <div class="pause-panel" id="pausePanel" aria-hidden="true">

@@ -7,14 +7,6 @@ const pausePanel = document.querySelector("#pausePanel");
 const resumeButton = document.querySelector("#resumeButton");
 const pcBird = document.querySelector("#pcBird");
 const goalMarker = document.querySelector("#goalMarker");
-const tiltDot = document.querySelector("#tiltDot");
-const gyroStatus = document.querySelector("#gyroStatus");
-const tiltXSlider = document.querySelector("#tiltXSlider");
-const tiltYSlider = document.querySelector("#tiltYSlider");
-const tiltXValue = document.querySelector("#tiltXValue");
-const tiltYValue = document.querySelector("#tiltYValue");
-const deviceGyroButton = document.querySelector("#deviceGyroButton");
-const gyroCenterButton = document.querySelector("#gyroCenterButton");
 const stageToast = document.querySelector("#stageToast");
 
 const stageMap = [
@@ -113,13 +105,18 @@ const goalCell = findCell("G");
 let playerCell = { ...startCell };
 let stepCount = 0;
 let toastTimer;
+let controlStatus = "待機";
 let tiltX = 0;
 let tiltY = 0;
 let deviceGyroActive = false;
+let gyroEnableInProgress = false;
 let deviceBaseline = null;
 let lastGyroMoveAt = 0;
-const gyroMoveThreshold = 0.36;
-const gyroMoveInterval = 430;
+let lastBlockedToastAt = 0;
+const gyroMoveThreshold = 0.22;
+const gyroMoveIntervalMin = 170;
+const gyroMoveIntervalMax = 640;
+const gyroTiltDegrees = 24;
 
 stageMap.forEach((rowString, row) => {
   [...rowString].forEach((cell, col) => {
@@ -174,7 +171,8 @@ const showToast = (message) => {
 };
 
 const setGyroStatus = (message) => {
-  if (gyroStatus) gyroStatus.value = message;
+  controlStatus = message;
+  if (gameScreen) gameScreen.dataset.controlStatus = message;
 };
 
 const placeMarker = (element, cell, xName, yName) => {
@@ -191,11 +189,14 @@ const updatePlayer = () => {
 
 const clampTilt = (value) => Math.max(-1, Math.min(1, value));
 
-const syncTiltUi = () => {
-  if (tiltXSlider) tiltXSlider.value = String(Math.round(tiltX * 100));
-  if (tiltYSlider) tiltYSlider.value = String(Math.round(tiltY * 100));
-  if (tiltXValue) tiltXValue.value = tiltX.toFixed(2);
-  if (tiltYValue) tiltYValue.value = tiltY.toFixed(2);
+const clamp01 = (value) => Math.max(0, Math.min(1, value));
+
+const tiltStrength = () => Math.max(Math.abs(tiltX), Math.abs(tiltY));
+
+const currentGyroMoveInterval = () => {
+  const normalizedStrength = clamp01((tiltStrength() - gyroMoveThreshold) / (1 - gyroMoveThreshold));
+  const easedStrength = 1 - (1 - normalizedStrength) ** 2;
+  return gyroMoveIntervalMax - (gyroMoveIntervalMax - gyroMoveIntervalMin) * easedStrength;
 };
 
 const directionFromTilt = () => {
@@ -206,7 +207,7 @@ const directionFromTilt = () => {
   return tiltY > 0 ? "down" : "up";
 };
 
-const setTilt = (nextX, nextY, source = "スライダー", updateSliders = true) => {
+const setTilt = (nextX, nextY, source = "実機") => {
   tiltX = clampTilt(nextX);
   tiltY = clampTilt(nextY);
   gameScreen.style.setProperty("--tilt-x", tiltX.toFixed(3));
@@ -214,10 +215,6 @@ const setTilt = (nextX, nextY, source = "スライダー", updateSliders = true)
   gameScreen.style.setProperty("--scene-offset-x", `${(-tiltX * 5).toFixed(2)}px`);
   gameScreen.style.setProperty("--scene-offset-y", `${(-tiltY * 4).toFixed(2)}px`);
   if (pcBird) pcBird.style.setProperty("--lean", tiltX.toFixed(3));
-  if (tiltDot) {
-    tiltDot.style.transform = `translate(calc(-50% + ${tiltX * 1.18}rem), calc(-50% + ${tiltY * 1.18}rem))`;
-  }
-  if (updateSliders) syncTiltUi();
   const directionName = directionFromTilt();
   setGyroStatus(directionName ? `${source}: ${directions[directionName].label}` : "待機");
 };
@@ -229,6 +226,13 @@ const popClass = (element, className, duration = 260) => {
     element.classList.add(className);
     window.setTimeout(() => element.classList.remove(className), duration);
   });
+};
+
+const showBlockedToast = () => {
+  const now = Date.now();
+  if (now - lastBlockedToastAt < 900) return;
+  lastBlockedToastAt = now;
+  showToast("雲の壁にぶつかった");
 };
 
 const movePlayer = (directionName) => {
@@ -243,7 +247,7 @@ const movePlayer = (directionName) => {
   if (!isWalkable(nextCell.col, nextCell.row)) {
     popClass(pcBird, "is-blocked", 280);
     setGyroStatus("進めない");
-    showToast("雲の壁にぶつかった");
+    showBlockedToast();
     return;
   }
 
@@ -263,7 +267,6 @@ const movePlayer = (directionName) => {
 };
 
 const resetStage = () => {
-  stopDeviceGyro();
   clearTilt();
   playerCell = { ...startCell };
   stepCount = 0;
@@ -292,69 +295,116 @@ const stopDeviceGyro = () => {
   if (!deviceGyroActive) return;
   window.removeEventListener("deviceorientation", handleDeviceOrientation);
   deviceGyroActive = false;
+  gyroEnableInProgress = false;
 };
 
 const clearTilt = () => {
-  setTilt(0, 0, "中央");
+  setTilt(0, 0, "実機");
   deviceBaseline = null;
+  lastGyroMoveAt = 0;
+};
+
+const screenAngle = () => {
+  const angle = Number(window.screen?.orientation?.angle ?? window.orientation ?? 0);
+  return ((angle % 360) + 360) % 360;
+};
+
+const tiltForScreen = (betaDelta, gammaDelta) => {
+  const angle = screenAngle();
+  if (angle >= 45 && angle < 135) return { x: betaDelta, y: -gammaDelta };
+  if (angle >= 135 && angle < 225) return { x: -gammaDelta, y: -betaDelta };
+  if (angle >= 225 && angle < 315) return { x: -betaDelta, y: gammaDelta };
+  return { x: gammaDelta, y: betaDelta };
 };
 
 function handleDeviceOrientation(event) {
-  const beta = Number(event.beta || 0);
-  const gamma = Number(event.gamma || 0);
-  if (!deviceBaseline) {
-    deviceBaseline = { beta, gamma };
+  if (event.beta === null || event.gamma === null) return;
+
+  const beta = Number(event.beta);
+  const gamma = Number(event.gamma);
+  if (!Number.isFinite(beta) || !Number.isFinite(gamma)) return;
+
+  const angle = screenAngle();
+  if (!deviceBaseline || deviceBaseline.angle !== angle) {
+    deviceBaseline = { beta, gamma, angle };
+    setTilt(0, 0, "実機");
+    return;
   }
-  setTilt((gamma - deviceBaseline.gamma) / 28, (beta - deviceBaseline.beta) / 28, "実機", true);
+
+  const screenTilt = tiltForScreen(beta - deviceBaseline.beta, gamma - deviceBaseline.gamma);
+  setTilt(screenTilt.x / gyroTiltDegrees, screenTilt.y / gyroTiltDegrees, "実機");
 }
 
 const enableDeviceGyro = async () => {
+  if (deviceGyroActive || gyroEnableInProgress) return;
+
   if (typeof window.DeviceOrientationEvent === "undefined") {
     setGyroStatus("未対応");
+    showToast("この端末では傾きセンサーを取得できません");
+    return;
+  }
+
+  gyroEnableInProgress = true;
+  try {
+    if (typeof window.DeviceOrientationEvent.requestPermission === "function") {
+      const permission = await window.DeviceOrientationEvent.requestPermission();
+      if (permission !== "granted") {
+        setGyroStatus("未許可");
+        showToast("傾きセンサーが許可されませんでした");
+        return;
+      }
+    }
+
+    deviceBaseline = null;
+    window.addEventListener("deviceorientation", handleDeviceOrientation);
+    deviceGyroActive = true;
+    setGyroStatus("実機待ち");
+    showToast("そのまま傾けて進もう");
+  } catch (error) {
+    setGyroStatus("未許可");
+    showToast("傾きセンサーを開始できませんでした");
+  } finally {
+    gyroEnableInProgress = false;
+  }
+};
+
+const handleGyroStartGesture = () => {
+  void enableDeviceGyro();
+};
+
+const bindGyroStart = () => {
+  if (typeof window.DeviceOrientationEvent === "undefined") {
+    setGyroStatus("キーボード");
     return;
   }
 
   if (typeof window.DeviceOrientationEvent.requestPermission === "function") {
-    const permission = await window.DeviceOrientationEvent.requestPermission();
-    if (permission !== "granted") {
-      setGyroStatus("未許可");
-      return;
-    }
+    showToast("画面をタップして傾き操作を開始");
+    window.addEventListener("pointerdown", handleGyroStartGesture, { once: true });
+    window.addEventListener("touchend", handleGyroStartGesture, { once: true });
+    return;
   }
 
-  deviceBaseline = null;
-  if (!deviceGyroActive) {
-    window.addEventListener("deviceorientation", handleDeviceOrientation);
-    deviceGyroActive = true;
-  }
-  setGyroStatus("実機待ち");
-};
-
-const updateTiltFromSliders = () => {
-  stopDeviceGyro();
-  const nextX = Number(tiltXSlider?.value || 0) / 100;
-  const nextY = Number(tiltYSlider?.value || 0) / 100;
-  setTilt(nextX, nextY, "スライダー", false);
-  syncTiltUi();
+  void enableDeviceGyro();
 };
 
 const tickGyroMovement = () => {
+  if (cellAt(playerCell.col, playerCell.row) === "G") return;
   const directionName = directionFromTilt();
   if (!directionName) return;
   const now = Date.now();
-  if (now - lastGyroMoveAt < gyroMoveInterval) return;
+  if (now - lastGyroMoveAt < currentGyroMoveInterval()) return;
   lastGyroMoveAt = now;
   movePlayer(directionName);
 };
 
-tiltXSlider?.addEventListener("input", updateTiltFromSliders);
-tiltYSlider?.addEventListener("input", updateTiltFromSliders);
-deviceGyroButton?.addEventListener("click", enableDeviceGyro);
-gyroCenterButton?.addEventListener("click", () => {
-  stopDeviceGyro();
+const resetGyroBaseline = () => {
+  if (!deviceGyroActive) return;
   clearTilt();
-});
+};
 
+window.addEventListener("orientationchange", resetGyroBaseline);
+window.screen?.orientation?.addEventListener?.("change", resetGyroBaseline);
 window.setInterval(tickGyroMovement, 80);
 
 resetButton.addEventListener("click", resetStage);
@@ -382,5 +432,6 @@ pausePanel.addEventListener("click", (event) => {
   if (event.target === pausePanel) resumeButton.click();
 });
 
-setTilt(0, 0);
 updatePlayer();
+setTilt(0, 0);
+bindGyroStart();
