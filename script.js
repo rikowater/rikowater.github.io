@@ -8,35 +8,30 @@ const resumeButton = document.querySelector("#resumeButton");
 const pcBird = document.querySelector("#pcBird");
 const birdSprite = document.querySelector("#birdSprite");
 const goalMarker = document.querySelector("#goalMarker");
+const resultPanel = document.querySelector("#resultPanel");
+const resultResetButton = document.querySelector("#resultResetButton");
 const stageToast = document.querySelector("#stageToast");
 
 const stageMap = [
   "   ######    ",
-  "  ##..C.###  ",
+  "  ##....###  ",
   " ##..##..G#  ",
-  " #..V#..###  ",
-  " #B..#S..C#  ",
+  " #...#..###  ",
+  " #B..#....#  ",
   " ###..##..#  ",
-  "   #..V..##  ",
+  "   #.....##  ",
   "   ######    "
 ];
 
 const featureByCell = {
   B: "start",
-  C: "crystal",
-  V: "vortex",
-  S: "sun",
   G: "goal"
 };
 
 const assetPaths = {
   cloud: "./assets/tiles/cloud-wall-generated.png",
   startPad: "./assets/gimmicks/start-pad.png",
-  goalPad: "./assets/gimmicks/goal-pad.png",
-  crystal: "./assets/gimmicks/crystal.svg",
-  vortex: "./assets/gimmicks/vortex.svg",
-  sun: "./assets/gimmicks/sun-pad.svg",
-  spark: "./assets/gimmicks/spark.svg"
+  goalPad: "./assets/gimmicks/goal-pad.png"
 };
 
 const birdSprites = {
@@ -156,6 +151,7 @@ let deviceBaseline = null;
 let lastFrameAt = 0;
 let lastBlockedAt = 0;
 let activeDirection = "idle";
+let stageCleared = false;
 const pressedKeys = new Set();
 const keyHoldTimers = new Map();
 const inputDeadzone = 0.08;
@@ -186,23 +182,8 @@ stageMap.forEach((rowString, row) => {
       addBoardItem("start-pad has-image", col, row, assetMarkup(assetPaths.startPad));
     }
 
-    if (cell === "C") {
-      addBoardItem("crystal has-image", col, row, assetMarkup(assetPaths.crystal));
-      addBoardItem("spark has-image", col + 0.32, row - 0.22, assetMarkup(assetPaths.spark));
-    }
-
-    if (cell === "V") {
-      addBoardItem("vortex has-image", col, row, assetMarkup(assetPaths.vortex));
-    }
-
-    if (cell === "S") {
-      addBoardItem("sun-stone has-image", col, row, assetMarkup(assetPaths.sun));
-      addBoardItem("spark has-image", col - 0.28, row + 0.18, assetMarkup(assetPaths.spark));
-    }
-
     if (cell === "G") {
       addBoardItem("goal-pad has-image", col, row, assetMarkup(assetPaths.goalPad));
-      addBoardItem("spark has-image", col + 0.3, row - 0.18, assetMarkup(assetPaths.spark));
     }
   });
 });
@@ -279,6 +260,12 @@ const popClass = (element, className, duration = 260) => {
   });
 };
 
+const showResult = () => {
+  stageCleared = true;
+  resultPanel?.classList.add("is-open");
+  resultPanel?.setAttribute("aria-hidden", "false");
+};
+
 const currentKeyboardVector = () => {
   const vector = { x: 0, y: 0 };
   pressedKeys.forEach((key) => {
@@ -336,6 +323,7 @@ const tryMovePlayer = (deltaCol, deltaRow) => {
 };
 
 const pulseKeyboardMove = (key) => {
+  if (stageCleared) return;
   const keyVector = keyToVector[key];
   if (!keyVector) return;
   setBirdDirection(dominantDirection(keyVector));
@@ -347,10 +335,11 @@ const pulseKeyboardMove = (key) => {
 
 const updateGoalState = () => {
   const distanceToGoal = Math.hypot(playerPosition.col - goalCell.col, playerPosition.row - goalCell.row);
-  if (distanceToGoal < 0.42) {
+  if (distanceToGoal < 0.52) {
     if (!pcBird?.classList.contains("is-goal")) {
       pcBird?.classList.add("is-goal");
       setControlStatus("到着");
+      showResult();
     }
   } else {
     pcBird?.classList.remove("is-goal");
@@ -363,7 +352,7 @@ const animatePlayer = (timestamp) => {
   lastFrameAt = timestamp;
 
   const moveVector = currentMoveVector();
-  if (moveVector.strength > 0) {
+  if (!stageCleared && moveVector.strength > 0) {
     setBirdDirection(dominantDirection(moveVector));
     const speed = maxCellsPerSecond * moveVector.strength;
     const moved = tryMovePlayer(moveVector.x * speed * deltaSeconds, moveVector.y * speed * deltaSeconds);
@@ -383,6 +372,9 @@ const animatePlayer = (timestamp) => {
 
 const resetStage = () => {
   clearTilt();
+  stageCleared = false;
+  resultPanel?.classList.remove("is-open");
+  resultPanel?.setAttribute("aria-hidden", "true");
   pressedKeys.clear();
   keyHoldTimers.forEach((timer) => window.clearTimeout(timer));
   keyHoldTimers.clear();
@@ -390,6 +382,7 @@ const resetStage = () => {
   stepCount = 0;
   updatePlayer();
   pcBird?.classList.remove("is-goal", "is-blocked", "is-moving");
+  setBirdDirection("idle");
   popClass(pcBird, "reset-pop", 620);
   setControlStatus("待機");
 };
@@ -520,6 +513,7 @@ const resetGyroBaseline = () => {
 };
 
 resetButton?.addEventListener("click", resetStage);
+resultResetButton?.addEventListener("click", resetStage);
 hintButton?.addEventListener("click", () => {
   gameScreen.classList.add("hinting");
   window.setTimeout(() => gameScreen.classList.remove("hinting"), 1600);

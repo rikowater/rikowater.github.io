@@ -24,12 +24,6 @@
         </div>
 
         <section class="playfield" id="playfield" aria-label="雲の上のパズル盤面">
-          <svg class="trail-layer" viewBox="0 0 1000 560" preserveAspectRatio="none" aria-hidden="true">
-            <path class="gold-trail trail-main" d="M142 344 C235 314 292 275 354 245 C414 216 452 210 504 230" />
-            <path class="gold-trail trail-branch" d="M352 246 C319 318 273 372 206 418" />
-            <path class="blue-trail" d="M540 233 C606 193 681 197 716 250 C748 297 705 344 630 346" />
-            <path class="blue-trail small" d="M598 364 C655 388 704 379 745 338" />
-          </svg>
           <div class="board-layer" id="boardLayer"></div>
           <div class="air-birds" aria-hidden="true">
             <span></span><span></span><span></span><span></span>
@@ -58,6 +52,14 @@
               <path d="M26.3 4.6C15.8 5.1 8.9 10.8 6.8 20.7c3.9-.7 6.8-2.2 8.8-4.3-1.2 3.2-3.4 5.9-6.5 8.1l1.2 2.4c3.3-2.1 5.8-5.2 7.5-9.2 2.9-.4 6.9-3.4 8.5-13.1Z" />
             </svg>
           </button>
+        </div>
+
+        <div class="result-panel" id="resultPanel" aria-hidden="true">
+          <div class="result-inner">
+            <p class="result-kicker">Stage Clear</p>
+            <h1>光の羽に届いた</h1>
+            <button id="resultResetButton" type="button">もう一度</button>
+          </div>
         </div>
 
         <div class="stage-toast" id="stageToast" role="status" aria-live="polite"></div>

@@ -37,8 +37,8 @@ body {
   overscroll-behavior: none;
   touch-action: none;
   background:
-    linear-gradient(180deg, #d7ebe9 0%, #f7f0df 100%),
-    #d7ebe9;
+    radial-gradient(ellipse at center, rgba(211, 234, 232, 0.72), rgba(109, 140, 145, 0.62)),
+    #233036;
   font-family:
     "Hiragino Maru Gothic ProN",
     "Yu Gothic",
@@ -57,12 +57,14 @@ button {
   height: 100vh;
   display: grid;
   place-items: center;
+  overflow: hidden;
 }
 
 .game-screen {
   position: relative;
-  width: 100vw;
-  height: 100vh;
+  width: min(100vw, 222.222vh);
+  height: min(100vh, 45vw);
+  aspect-ratio: 20 / 9;
   min-width: 0;
   min-height: 0;
   overflow: hidden;
@@ -453,68 +455,66 @@ button {
 }
 
 .floor-tile {
-  width: clamp(3rem, 5.5vw, 8.2rem);
-  height: clamp(2.45rem, 4.75vw, 7.05rem);
-  border-radius: clamp(0.65rem, 1.05vw, 1.35rem);
+  width: clamp(2.55rem, 4.15vw, 6.3rem);
+  height: clamp(2.55rem, 4.15vw, 6.3rem);
+  border-radius: clamp(0.35rem, 0.52vw, 0.72rem);
+  border: 1px solid rgba(205, 252, 255, 0.46);
   background:
-    radial-gradient(circle at 34% 24%, rgba(255, 255, 255, 0.68), transparent 34%),
-    linear-gradient(145deg, rgba(249, 255, 245, 0.95), rgba(211, 234, 219, 0.9) 54%, rgba(143, 176, 153, 0.78));
+    linear-gradient(rgba(192, 250, 255, 0.2) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(192, 250, 255, 0.2) 1px, transparent 1px),
+    radial-gradient(circle at 50% 50%, rgba(194, 250, 255, 0.16), transparent 68%);
+  background-size:
+    33.333% 33.333%,
+    33.333% 33.333%,
+    100% 100%;
   box-shadow:
-    inset 0 0 0 0.12rem rgba(255, 255, 255, 0.5),
-    inset 0 -0.45rem 1.2rem rgba(103, 135, 115, 0.14),
-    0 0.42rem 0.5rem rgba(80, 103, 96, 0.12);
-  filter: none;
+    inset 0 0 0 1px rgba(255, 255, 255, 0.2),
+    inset 0 0 1.1rem rgba(145, 238, 255, 0.14),
+    0 0 0.55rem rgba(123, 226, 247, 0.25);
+  opacity: 0.62;
+  mix-blend-mode: screen;
+  filter: drop-shadow(0 0 0.24rem rgba(162, 242, 255, 0.28));
 }
 
+.floor-tile::before,
 .floor-tile::after {
   content: "";
   position: absolute;
-  inset: 0.42rem;
-  border-radius: 0.95rem;
-  background:
-    linear-gradient(135deg, transparent 25%, rgba(255, 255, 255, 0.35) 26% 29%, transparent 30%),
-    linear-gradient(45deg, transparent 37%, rgba(123, 148, 124, 0.13) 38% 42%, transparent 43%);
-  opacity: 0.52;
+  pointer-events: none;
 }
 
-.floor-tile.path {
-  background:
-    linear-gradient(135deg, rgba(252, 255, 247, 0.96), rgba(211, 233, 220, 0.88) 48%, rgba(147, 176, 153, 0.72));
+.floor-tile::before {
+  inset: -0.08rem;
+  border-radius: inherit;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  opacity: 0.7;
 }
 
-.floor-tile.start {
-  background:
-    radial-gradient(circle at 34% 24%, rgba(255, 255, 255, 0.72), transparent 34%),
-    linear-gradient(145deg, rgba(255, 251, 235, 0.96), rgba(236, 217, 166, 0.88) 52%, rgba(175, 158, 112, 0.72));
+.floor-tile::after {
+  left: 50%;
+  top: 50%;
+  width: 0.42rem;
+  height: 0.42rem;
+  border-radius: 50%;
+  background: rgba(218, 255, 255, 0.66);
+  box-shadow: 0 0 0.65rem rgba(172, 250, 255, 0.72);
+  transform: translate(-50%, -50%);
+  opacity: 0.28;
 }
 
-.floor-tile.pad {
-  background:
-    radial-gradient(circle at 50% 50%, rgba(255, 244, 173, 0.94) 0 18%, transparent 24%),
-    linear-gradient(135deg, rgba(255, 253, 236, 0.96), rgba(222, 226, 198, 0.88) 48%, rgba(158, 179, 148, 0.72));
-  box-shadow:
-    0 0 1rem rgba(250, 220, 117, 0.5),
-    0 0.5rem 0.6rem rgba(79, 103, 96, 0.12),
-    inset 0 0.08rem 0.5rem rgba(255, 255, 255, 0.85);
-}
-
+.floor-tile.start,
 .floor-tile.goal {
-  background:
-    radial-gradient(circle at 50% 50%, rgba(206, 250, 255, 0.96) 0 16%, transparent 26%),
-    linear-gradient(135deg, rgba(250, 255, 255, 0.96), rgba(206, 233, 229, 0.9) 52%, rgba(143, 180, 175, 0.72));
-  box-shadow:
-    0 0 1.4rem rgba(151, 230, 241, 0.55),
-    0 0.5rem 0.6rem rgba(79, 103, 96, 0.12),
-    inset 0 0.08rem 0.5rem rgba(255, 255, 255, 0.85);
+  border-color: rgba(255, 251, 211, 0.52);
+  opacity: 0.5;
 }
 
 .cloud-wall {
-  width: clamp(5.2rem, 7.1vw, 10.8rem);
-  height: clamp(4.9rem, 6.7vw, 10rem);
-  transform: translate(-50%, -58%);
+  width: clamp(4.15rem, 5.25vw, 7.7rem);
+  height: clamp(3.7rem, 4.7vw, 6.9rem);
+  transform: translate(-50%, -50%);
   filter:
-    drop-shadow(0 0.5rem 0.36rem rgba(84, 102, 104, 0.16))
-    drop-shadow(0 0 0.55rem rgba(255, 255, 255, 0.32));
+    drop-shadow(0 0.32rem 0.24rem rgba(84, 102, 104, 0.13))
+    drop-shadow(0 0 0.5rem rgba(255, 255, 255, 0.42));
 }
 
 .cloud-wall .puff {
@@ -757,8 +757,8 @@ button {
 }
 
 .bird-token {
-  width: clamp(5.8rem, 7.2vw, 11rem);
-  height: clamp(5.8rem, 7.2vw, 11rem);
+  width: clamp(5rem, 5.9vw, 8.9rem);
+  height: clamp(5rem, 5.9vw, 8.9rem);
   transform:
     translate(-50%, -56%)
     rotate(calc(var(--lean, 0) * 3deg));
@@ -770,8 +770,8 @@ button {
 
 .pc-bird {
   position: absolute;
-  width: clamp(5.4rem, 7.4vw, 11.3rem);
-  height: clamp(5.4rem, 7.4vw, 11.3rem);
+  width: clamp(5rem, 5.9vw, 8.9rem);
+  height: clamp(5rem, 5.9vw, 8.9rem);
   left: var(--player-x, 26%);
   top: var(--player-y, 58%);
   opacity: 1;
@@ -784,19 +784,34 @@ button {
   height: 100%;
   object-fit: contain;
   pointer-events: none;
+  transform-origin: 50% 50%;
 }
 
 .pc-bird[data-direction="left"],
 .pc-bird[data-direction="right"] {
-  width: clamp(6.2rem, 8.6vw, 13rem);
-  height: clamp(4.8rem, 6.7vw, 10.2rem);
+  width: clamp(5rem, 5.9vw, 8.9rem);
+  height: clamp(5rem, 5.9vw, 8.9rem);
 }
 
 .pc-bird[data-direction="up"],
 .pc-bird[data-direction="down"],
 .pc-bird[data-direction="idle"] {
-  width: clamp(5.3rem, 7.2vw, 10.8rem);
-  height: clamp(5.3rem, 7.2vw, 10.8rem);
+  width: clamp(5rem, 5.9vw, 8.9rem);
+  height: clamp(5rem, 5.9vw, 8.9rem);
+}
+
+.pc-bird[data-direction="left"] img,
+.pc-bird[data-direction="right"] img {
+  transform: scale(0.78);
+}
+
+.pc-bird[data-direction="up"] img {
+  transform: scale(0.86);
+}
+
+.pc-bird[data-direction="down"] img,
+.pc-bird[data-direction="idle"] img {
+  transform: scale(0.9);
 }
 
 .pc-bird.is-moving {
@@ -1171,6 +1186,77 @@ button {
   backdrop-filter: blur(0.25rem);
 }
 
+.result-panel {
+  position: absolute;
+  inset: 0;
+  z-index: 70;
+  display: grid;
+  place-items: center;
+  padding: 2rem;
+  background:
+    radial-gradient(circle at 50% 45%, rgba(226, 255, 255, 0.28), transparent 28%),
+    linear-gradient(180deg, rgba(216, 236, 235, 0.16), rgba(29, 51, 57, 0.36));
+  opacity: 0;
+  pointer-events: none;
+  backdrop-filter: blur(0.18rem);
+  transition:
+    opacity 220ms ease,
+    backdrop-filter 220ms ease;
+}
+
+.result-panel.is-open {
+  opacity: 1;
+  pointer-events: auto;
+  backdrop-filter: blur(0.35rem);
+}
+
+.result-inner {
+  min-width: min(28rem, 72vw);
+  display: grid;
+  justify-items: center;
+  gap: 0.75rem;
+  padding: 2rem 2.4rem 2.15rem;
+  border-radius: 0.75rem;
+  background:
+    linear-gradient(180deg, rgba(255, 251, 237, 0.84), rgba(232, 247, 247, 0.76));
+  border: 1px solid rgba(255, 255, 255, 0.56);
+  box-shadow:
+    0 0 2rem rgba(174, 244, 255, 0.48),
+    0 1.2rem 3.6rem rgba(52, 74, 77, 0.24);
+  color: rgba(82, 69, 58, 0.95);
+}
+
+.result-kicker {
+  margin: 0;
+  color: rgba(111, 167, 179, 0.92);
+  font-size: clamp(0.8rem, 1vw, 1.1rem);
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.result-inner h1 {
+  margin: 0;
+  font-size: clamp(1.65rem, 2.7vw, 3.35rem);
+  line-height: 1.15;
+  letter-spacing: 0;
+  text-shadow: 0 0.08rem 0 rgba(255, 255, 255, 0.75);
+}
+
+.result-inner button {
+  margin-top: 0.6rem;
+  border: 0;
+  border-radius: 999rem;
+  padding: 0.72rem 1.45rem;
+  background: linear-gradient(180deg, #fff8df, #ead2a3);
+  color: rgba(93, 72, 55, 0.96);
+  font-weight: 800;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.62),
+    0 0.5rem 1.2rem rgba(86, 82, 71, 0.18);
+  cursor: pointer;
+}
+
 .stage-toast {
   display: none;
   left: 50%;
@@ -1254,8 +1340,8 @@ button {
 
 @media (max-width: 1100px), (max-height: 640px) {
   .game-screen {
-    width: 100vw;
-    height: 100vh;
+    width: min(100vw, 222.222vh);
+    height: min(100vh, 45vw);
   }
 
   .playfield,
@@ -1266,25 +1352,6 @@ button {
   .action-button {
     width: 2.65rem;
     height: 2.65rem;
-  }
-
-}
-
-@media (orientation: portrait) {
-  body {
-    overflow: hidden;
-  }
-
-  .mock-shell {
-    height: 100vh;
-    min-height: 100vh;
-    padding: 0;
-  }
-
-  .game-screen {
-    width: 100vw;
-    height: 100vh;
-    max-height: none;
   }
 
 }
