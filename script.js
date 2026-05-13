@@ -12,6 +12,8 @@ const resultPanel = document.querySelector("#resultPanel");
 const resultResetButton = document.querySelector("#resultResetButton");
 const stageToast = document.querySelector("#stageToast");
 const gyroModeButton = document.querySelector("#gyroModeButton");
+const distanceHud = document.querySelector("#distanceHud");
+const distanceBarFill = document.querySelector("#distanceBarFill");
 const portraitLockedLandscapeQuery = window.matchMedia?.("(orientation: portrait) and (max-width: 900px)");
 
 const rowCount = 8;
@@ -31,7 +33,8 @@ const featureByCell = {
 const assetPaths = {
   cloud: "./assets/tiles/cloud-wall-generated.png",
   startPad: "./assets/gimmicks/start-pad.png",
-  goalPad: "./assets/gimmicks/goal-pad.png"
+  goalPad: "./assets/gimmicks/goal-pad.png",
+  experienceStone: "./assets/gimmicks/experience-stone.png"
 };
 
 const birdSprites = {
@@ -248,6 +251,10 @@ const canOccupy = (col, row) => {
 let startCell = findCell("B");
 let goalCell = findCell("G");
 let playerPosition = { col: startCell.col, row: startCell.row };
+let collectibles = [];
+let maxTravelDistance = 1;
+let travelDistance = 0;
+let stageBuildId = 0;
 let stepCount = 0;
 let toastTimer;
 let controlStatus = "待機";
@@ -267,6 +274,75 @@ const inputDeadzone = 0.08;
 const maxCellsPerSecond = 3.25;
 const gyroTiltDegrees = 24;
 const rawGyroTiltDegrees = 28;
+
+const shuffle = (items) => [...items].sort(() => Math.random() - 0.5);
+
+const manhattanDistance = (a, b) => Math.abs(a.col - b.col) + Math.abs(a.row - b.row);
+
+const walkableStageCells = () => {
+  const cells = [];
+  stageMap.forEach((rowString, row) => {
+    [...rowString].forEach((cell, col) => {
+      if (cell !== "#" && cell !== " ") cells.push({ col, row, cell });
+    });
+  });
+  return cells;
+};
+
+const shortestPathDistance = () => {
+  const queue = [{ ...startCell, distance: 0 }];
+  const visited = new Set([`${startCell.col}:${startCell.row}`]);
+
+  while (queue.length > 0) {
+    const current = queue.shift();
+    if (current.col === goalCell.col && current.row === goalCell.row) return current.distance;
+
+    shuffleDirections().forEach((direction) => {
+      const next = { col: current.col + direction.x, row: current.row + direction.y };
+      const key = `${next.col}:${next.row}`;
+      if (visited.has(key) || !isWalkableCell(next.col, next.row)) return;
+      visited.add(key);
+      queue.push({ ...next, distance: current.distance + 1 });
+    });
+  }
+
+  return 12;
+};
+
+const createCollectibles = () => {
+  const candidates = walkableStageCells().filter(({ col, row, cell }) => {
+    const position = { col, row };
+    return cell === "." && manhattanDistance(position, startCell) > 2 && manhattanDistance(position, goalCell) > 1;
+  });
+  const fallbackCandidates = walkableStageCells().filter(({ cell }) => cell === ".");
+  const source = candidates.length > 0 ? candidates : fallbackCandidates;
+  const count = Math.min(randomInt(1, 3), source.length);
+  stageBuildId += 1;
+  return shuffle(source)
+    .slice(0, count)
+    .map((cell, index) => ({
+      id: `stone-${stageBuildId}-${index}`,
+      col: cell.col,
+      row: cell.row,
+      collected: false
+    }));
+};
+
+const updateDistanceHud = () => {
+  const remaining = Math.max(0, maxTravelDistance - travelDistance);
+  const ratio = clamp(remaining / maxTravelDistance, 0, 1);
+  distanceBarFill?.style.setProperty("--distance-ratio", ratio.toFixed(3));
+  distanceHud?.classList.toggle("is-low", ratio <= 0.25 && ratio > 0);
+  distanceHud?.classList.toggle("is-empty", ratio <= 0);
+  distanceHud?.setAttribute("aria-label", `移動可能距離 残り${Math.ceil(remaining)}`);
+};
+
+const resetTravelDistance = () => {
+  const routeDistance = shortestPathDistance();
+  maxTravelDistance = Math.ceil(Math.max(18, routeDistance * 1.85 + collectibles.length * 1.5 + 5));
+  travelDistance = 0;
+  updateDistanceHud();
+};
 
 const renderStage = () => {
   boardLayer.replaceChildren();
@@ -297,14 +373,26 @@ const renderStage = () => {
       }
     });
   });
+
+  collectibles.forEach((item) => {
+    if (item.collected) return;
+    const stone = addBoardItem("experience-stone has-image", item.col, item.row, assetMarkup(assetPaths.experienceStone));
+    stone.dataset.collectibleId = item.id;
+  });
+};
+
+const applyStageState = () => {
+  startCell = findCell("B");
+  goalCell = findCell("G");
+  playerPosition = { col: startCell.col, row: startCell.row };
+  collectibles = createCollectibles();
+  resetTravelDistance();
+  renderStage();
 };
 
 const rebuildStage = () => {
   stageMap = generateStageMap();
-  startCell = findCell("B");
-  goalCell = findCell("G");
-  playerPosition = { col: startCell.col, row: startCell.row };
-  renderStage();
+  applyStageState();
 };
 
 const showToast = (message) => {
@@ -439,8 +527,41 @@ const showBlockedFeedback = () => {
   popClass(pcBird, "is-blocked", 220);
 };
 
+const collectExperienceStones = () => {
+  collectibles.forEach((item) => {
+    if (item.collected) return;
+    const distance = Math.hypot(playerPosition.col - item.col, playerPosition.row - item.row);
+    if (distance > 0.45) return;
+
+    item.collected = true;
+    const stoneElement = boardLayer.querySelector(`[data-collectible-id="${item.id}"]`);
+    stoneElement?.classList.add("is-collected");
+    window.setTimeout(() => stoneElement?.remove(), 260);
+  });
+};
+
+const showDistanceLimitFeedback = () => {
+  setControlStatus("距離切れ");
+  distanceHud?.classList.add("is-empty");
+  showBlockedFeedback();
+};
+
 const tryMovePlayer = (deltaCol, deltaRow) => {
+  const requestedDistance = Math.hypot(deltaCol, deltaRow);
+  const remainingDistance = maxTravelDistance - travelDistance;
+  if (requestedDistance > 0 && remainingDistance <= 0) {
+    showDistanceLimitFeedback();
+    return false;
+  }
+
+  if (requestedDistance > remainingDistance) {
+    const limitScale = Math.max(0, remainingDistance / requestedDistance);
+    deltaCol *= limitScale;
+    deltaRow *= limitScale;
+  }
+
   let moved = false;
+  const beforePosition = { ...playerPosition };
   const nextCol = playerPosition.col + deltaCol;
   if (canOccupy(nextCol, playerPosition.row)) {
     playerPosition.col = nextCol;
@@ -455,6 +576,13 @@ const tryMovePlayer = (deltaCol, deltaRow) => {
 
   if (!moved && (Math.abs(deltaCol) > 0 || Math.abs(deltaRow) > 0)) {
     showBlockedFeedback();
+  }
+
+  if (moved) {
+    const actualDistance = Math.hypot(playerPosition.col - beforePosition.col, playerPosition.row - beforePosition.row);
+    travelDistance = Math.min(maxTravelDistance, travelDistance + actualDistance);
+    collectExperienceStones();
+    updateDistanceHud();
   }
 
   return moved;
@@ -693,7 +821,7 @@ window.screen?.orientation?.addEventListener?.("change", resetGyroBaseline);
 portraitLockedLandscapeQuery?.addEventListener?.("change", resetGyroBaseline);
 window.addEventListener("pointerdown", focusGameInput);
 
-renderStage();
+applyStageState();
 updatePlayer();
 setTilt(0, 0);
 updateGyroModeButton();
