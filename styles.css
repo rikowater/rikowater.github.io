@@ -81,6 +81,24 @@ button {
   outline: none;
 }
 
+.game-screen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 44;
+  pointer-events: none;
+  opacity: 0;
+  background:
+    radial-gradient(circle at 50% 54%, transparent 0 42%, rgba(178, 58, 46, 0.24) 78%, rgba(128, 28, 26, 0.33) 100%),
+    linear-gradient(180deg, rgba(255, 206, 190, 0.04), rgba(161, 47, 42, 0.16));
+  mix-blend-mode: multiply;
+  transition: opacity 420ms ease;
+}
+
+.game-screen.is-distance-critical::after {
+  opacity: 1;
+}
+
 .concept-wash {
   position: absolute;
   inset: 0;
@@ -107,6 +125,7 @@ button {
 .top-menu,
 .bottom-control,
 .pause-panel,
+.gameover-panel,
 .stage-toast {
   position: absolute;
 }
@@ -348,8 +367,8 @@ button {
 
 .menu-button span {
   width: 1.55rem;
-  height: 0.24rem;
-  margin: 0.13rem 0;
+  height: 0.22rem;
+  margin: 0.065rem 0;
   display: block;
   border-radius: 99rem;
   background: currentColor;
@@ -1367,7 +1386,8 @@ button {
   backdrop-filter: blur(0.25rem);
 }
 
-.result-panel {
+.result-panel,
+.gameover-panel {
   position: absolute;
   inset: 0;
   z-index: 70;
@@ -1385,13 +1405,21 @@ button {
     backdrop-filter 220ms ease;
 }
 
-.result-panel.is-open {
+.gameover-panel {
+  background:
+    radial-gradient(circle at 50% 46%, rgba(255, 228, 217, 0.28), transparent 30%),
+    linear-gradient(180deg, rgba(239, 217, 207, 0.22), rgba(58, 35, 35, 0.42));
+}
+
+.result-panel.is-open,
+.gameover-panel.is-open {
   opacity: 1;
   pointer-events: auto;
   backdrop-filter: blur(0.35rem);
 }
 
-.result-inner {
+.result-inner,
+.gameover-inner {
   min-width: min(28rem, 72vw);
   display: grid;
   justify-items: center;
@@ -1407,7 +1435,14 @@ button {
   color: rgba(82, 69, 58, 0.95);
 }
 
-.result-kicker {
+.gameover-inner {
+  box-shadow:
+    0 0 2rem rgba(255, 189, 164, 0.34),
+    0 1.2rem 3.6rem rgba(54, 42, 40, 0.26);
+}
+
+.result-kicker,
+.gameover-kicker {
   margin: 0;
   color: rgba(111, 167, 179, 0.92);
   font-size: clamp(0.8rem, 1vw, 1.1rem);
@@ -1416,7 +1451,12 @@ button {
   text-transform: uppercase;
 }
 
-.result-inner h1 {
+.gameover-kicker {
+  color: rgba(185, 112, 93, 0.92);
+}
+
+.result-inner h1,
+.gameover-inner h1 {
   margin: 0;
   font-size: clamp(1.65rem, 2.7vw, 3.35rem);
   line-height: 1.15;
@@ -1424,7 +1464,8 @@ button {
   text-shadow: 0 0.08rem 0 rgba(255, 255, 255, 0.75);
 }
 
-.result-inner button {
+.result-inner button,
+.gameover-inner button {
   margin-top: 0.6rem;
   border: 0;
   border-radius: 999rem;

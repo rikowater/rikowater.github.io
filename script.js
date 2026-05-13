@@ -10,6 +10,8 @@ const birdSprite = document.querySelector("#birdSprite");
 const goalMarker = document.querySelector("#goalMarker");
 const resultPanel = document.querySelector("#resultPanel");
 const resultResetButton = document.querySelector("#resultResetButton");
+const gameoverPanel = document.querySelector("#gameoverPanel");
+const gameoverRetryButton = document.querySelector("#gameoverRetryButton");
 const stageToast = document.querySelector("#stageToast");
 const distanceHud = document.querySelector("#distanceHud");
 const distanceBarFill = document.querySelector("#distanceBarFill");
@@ -273,6 +275,7 @@ let lastBlockedAt = 0;
 let lastMoveSoundAt = 0;
 let activeDirection = "idle";
 let stageCleared = false;
+let gameOver = false;
 let audioContext;
 const pressedKeys = new Set();
 const keyHoldTimers = new Map();
@@ -329,12 +332,20 @@ const createCollectibles = () => {
     }));
 };
 
+const resetCollectibles = () => {
+  collectibles = collectibles.map((item) => ({
+    ...item,
+    collected: false
+  }));
+};
+
 const updateDistanceHud = () => {
   const remaining = Math.max(0, maxTravelDistance - travelDistance);
   const ratio = clamp(remaining / maxTravelDistance, 0, 1);
   distanceBarFill?.style.setProperty("--distance-ratio", ratio.toFixed(3));
   distanceHud?.classList.toggle("is-low", ratio <= 0.25 && ratio > 0);
   distanceHud?.classList.toggle("is-empty", ratio <= 0);
+  gameScreen?.classList.toggle("is-distance-critical", ratio <= 0.2);
   distanceHud?.setAttribute("aria-label", `移動可能距離 残り${Math.ceil(remaining)}`);
 };
 
@@ -346,7 +357,7 @@ const resetTravelDistance = () => {
 };
 
 const updateStageLabel = () => {
-  if (stageLabel) stageLabel.textContent = `ステージ ${stageNumber}（仮）`;
+  if (stageLabel) stageLabel.textContent = `ステージ${stageNumber}`;
 };
 
 const trailPointFor = (position) => {
@@ -419,18 +430,20 @@ const playSound = (name) => {
     const now = performance.now();
     if (now - lastMoveSoundAt < 170) return;
     lastMoveSoundAt = now;
-    playTone(520, 0, 0.08, 0.012, "sine");
+    playTone(560, 0, 0.07, 0.01, "sine");
+    playTone(820, 0.025, 0.09, 0.006, "triangle");
     return;
   }
 
   if (name === "collect") {
-    playTone(740, 0, 0.13, 0.034, "sine");
-    playTone(1060, 0.055, 0.18, 0.026, "triangle");
+    playTone(760, 0, 0.13, 0.032, "sine");
+    playTone(1120, 0.055, 0.2, 0.024, "triangle");
+    playTone(1480, 0.16, 0.2, 0.014, "sine");
     return;
   }
 
   if (name === "blocked") {
-    playTone(190, 0, 0.1, 0.026, "triangle");
+    playTone(210, 0, 0.1, 0.02, "triangle");
     return;
   }
 
@@ -442,12 +455,19 @@ const playSound = (name) => {
   }
 
   if (name === "menu") {
-    playTone(560, 0, 0.08, 0.018, "sine");
+    playTone(620, 0, 0.08, 0.016, "sine");
     return;
   }
 
   if (name === "reset") {
-    playTone(430, 0, 0.11, 0.02, "triangle");
+    playTone(430, 0, 0.11, 0.018, "triangle");
+    return;
+  }
+
+  if (name === "gameover") {
+    playTone(420, 0, 0.28, 0.024, "sine");
+    playTone(310, 0.16, 0.34, 0.02, "triangle");
+    playTone(220, 0.34, 0.45, 0.016, "sine");
   }
 };
 
@@ -488,11 +508,15 @@ const renderStage = () => {
   });
 };
 
-const applyStageState = () => {
+const applyStageState = ({ regenerateCollectibles = false } = {}) => {
   startCell = findCell("B");
   goalCell = findCell("G");
   playerPosition = { col: startCell.col, row: startCell.row };
-  collectibles = createCollectibles();
+  if (regenerateCollectibles || collectibles.length === 0) {
+    collectibles = createCollectibles();
+  } else {
+    resetCollectibles();
+  }
   resetTravelDistance();
   resetTrail();
   updateStageLabel();
@@ -501,7 +525,7 @@ const applyStageState = () => {
 
 const rebuildStage = () => {
   stageMap = generateStageMap();
-  applyStageState();
+  applyStageState({ regenerateCollectibles: true });
 };
 
 const showToast = (message) => {
@@ -576,10 +600,26 @@ const popClass = (element, className, duration = 260) => {
   });
 };
 
+const distanceToGoal = () => Math.hypot(playerPosition.col - goalCell.col, playerPosition.row - goalCell.row);
+
+const isAtGoal = () => distanceToGoal() < 0.52;
+
 const showResult = () => {
   stageCleared = true;
   resultPanel?.classList.add("is-open");
   resultPanel?.setAttribute("aria-hidden", "false");
+};
+
+const showGameOver = () => {
+  if (stageCleared || gameOver) return;
+  gameOver = true;
+  pressedKeys.clear();
+  setTilt(0, 0, "距離切れ");
+  setControlStatus("距離切れ");
+  gameoverPanel?.classList.add("is-open");
+  gameoverPanel?.setAttribute("aria-hidden", "false");
+  pcBird?.classList.remove("is-moving");
+  playSound("gameover");
 };
 
 const currentKeyboardVector = () => {
@@ -636,9 +676,11 @@ const showDistanceLimitFeedback = () => {
   setControlStatus("距離切れ");
   distanceHud?.classList.add("is-empty");
   showBlockedFeedback();
+  showGameOver();
 };
 
 const tryMovePlayer = (deltaCol, deltaRow) => {
+  if (stageCleared || gameOver) return false;
   const requestedDistance = Math.hypot(deltaCol, deltaRow);
   const remainingDistance = maxTravelDistance - travelDistance;
   if (requestedDistance > 0 && remainingDistance <= 0) {
@@ -677,13 +719,16 @@ const tryMovePlayer = (deltaCol, deltaRow) => {
     collectExperienceStones();
     updateDistanceHud();
     playSound("move");
+    if (travelDistance >= maxTravelDistance - 0.001 && !isAtGoal()) {
+      showGameOver();
+    }
   }
 
   return moved;
 };
 
 const pulseKeyboardMove = (key) => {
-  if (stageCleared) return;
+  if (stageCleared || gameOver) return;
   const keyVector = keyToVector[key];
   if (!keyVector) return;
   setBirdDirection(dominantDirection(keyVector));
@@ -694,8 +739,7 @@ const pulseKeyboardMove = (key) => {
 };
 
 const updateGoalState = () => {
-  const distanceToGoal = Math.hypot(playerPosition.col - goalCell.col, playerPosition.row - goalCell.row);
-  if (distanceToGoal < 0.52) {
+  if (isAtGoal()) {
     if (!pcBird?.classList.contains("is-goal")) {
       pcBird?.classList.add("is-goal");
       setControlStatus("到着");
@@ -713,7 +757,7 @@ const animatePlayer = (timestamp) => {
   lastFrameAt = timestamp;
 
   const moveVector = currentMoveVector();
-  if (!stageCleared && moveVector.strength > 0) {
+  if (!stageCleared && !gameOver && moveVector.strength > 0) {
     setBirdDirection(dominantDirection(moveVector));
     const speed = maxCellsPerSecond * moveVector.strength;
     const moved = tryMovePlayer(moveVector.x * speed * deltaSeconds, moveVector.y * speed * deltaSeconds);
@@ -727,7 +771,7 @@ const animatePlayer = (timestamp) => {
   }
 
   updatePlayer();
-  updateGoalState();
+  if (!gameOver) updateGoalState();
   window.requestAnimationFrame(animatePlayer);
 };
 
@@ -753,8 +797,11 @@ const toggleStageMenu = () => {
 const resetStage = ({ next = false } = {}) => {
   clearTilt();
   stageCleared = false;
+  gameOver = false;
   resultPanel?.classList.remove("is-open");
   resultPanel?.setAttribute("aria-hidden", "true");
+  gameoverPanel?.classList.remove("is-open");
+  gameoverPanel?.setAttribute("aria-hidden", "true");
   pressedKeys.clear();
   keyHoldTimers.forEach((timer) => window.clearTimeout(timer));
   keyHoldTimers.clear();
@@ -903,6 +950,7 @@ const resetGyroBaseline = () => {
 
 resetButton?.addEventListener("click", resetStage);
 resultResetButton?.addEventListener("click", resetStage);
+gameoverRetryButton?.addEventListener("click", resetStage);
 menuButton?.addEventListener("click", () => {
   focusGameInput();
   toggleStageMenu();
