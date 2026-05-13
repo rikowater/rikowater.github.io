@@ -265,7 +265,7 @@ const keyHoldTimers = new Map();
 const inputDeadzone = 0.08;
 const maxCellsPerSecond = 3.25;
 const gyroTiltDegrees = 24;
-const rawGyroTiltDegrees = 45;
+const rawGyroTiltDegrees = 28;
 
 const renderStage = () => {
   boardLayer.replaceChildren();
