@@ -10,14 +10,18 @@ const birdSprite = document.querySelector("#birdSprite");
 const goalMarker = document.querySelector("#goalMarker");
 const resultPanel = document.querySelector("#resultPanel");
 const resultResetButton = document.querySelector("#resultResetButton");
+const resultNextButton = document.querySelector("#resultNextButton");
+const resultItemList = document.querySelector("#resultItemList");
 const gameoverPanel = document.querySelector("#gameoverPanel");
 const gameoverRetryButton = document.querySelector("#gameoverRetryButton");
 const stageToast = document.querySelector("#stageToast");
 const distanceHud = document.querySelector("#distanceHud");
 const distanceBarFill = document.querySelector("#distanceBarFill");
 const stageLabel = document.querySelector("#stageLabel");
+const movementTrailAura = document.querySelector("#movementTrailAura");
 const movementTrailPath = document.querySelector("#movementTrailPath");
 const movementTrailGlow = document.querySelector("#movementTrailGlow");
+const movementTrailSparkle = document.querySelector("#movementTrailSparkle");
 const portraitLockedLandscapeQuery = window.matchMedia?.("(orientation: portrait) and (max-width: 900px)");
 
 const rowCount = 8;
@@ -365,15 +369,34 @@ const trailPointFor = (position) => {
   return { x: pos.x, y: pos.y };
 };
 
+const trailPathData = (points) => {
+  if (points.length < 2) return "";
+  if (points.length === 2) {
+    const [start, end] = points;
+    return `M ${start.x.toFixed(2)} ${start.y.toFixed(2)} L ${end.x.toFixed(2)} ${end.y.toFixed(2)}`;
+  }
+
+  const [start] = points;
+  let pathData = `M ${start.x.toFixed(2)} ${start.y.toFixed(2)}`;
+  for (let index = 1; index < points.length - 1; index += 1) {
+    const current = points[index];
+    const next = points[index + 1];
+    const midX = (current.x + next.x) / 2;
+    const midY = (current.y + next.y) / 2;
+    pathData += ` Q ${current.x.toFixed(2)} ${current.y.toFixed(2)} ${midX.toFixed(2)} ${midY.toFixed(2)}`;
+  }
+
+  const end = points.at(-1);
+  pathData += ` T ${end.x.toFixed(2)} ${end.y.toFixed(2)}`;
+  return pathData;
+};
+
 const updateMovementTrail = () => {
-  const pathData =
-    trailPoints.length < 2
-      ? ""
-      : trailPoints
-          .map((point, index) => `${index === 0 ? "M" : "L"} ${point.x.toFixed(2)} ${point.y.toFixed(2)}`)
-          .join(" ");
+  const pathData = trailPathData(trailPoints);
+  movementTrailAura?.setAttribute("d", pathData);
   movementTrailPath?.setAttribute("d", pathData);
   movementTrailGlow?.setAttribute("d", pathData);
+  movementTrailSparkle?.setAttribute("d", pathData);
 };
 
 const addTrailPoint = (position, force = false) => {
@@ -604,8 +627,30 @@ const distanceToGoal = () => Math.hypot(playerPosition.col - goalCell.col, playe
 
 const isAtGoal = () => distanceToGoal() < 0.52;
 
+const renderResultItems = () => {
+  if (!resultItemList) return;
+  resultItemList.replaceChildren();
+  const collectedItems = collectibles.filter((item) => item.collected);
+
+  if (collectedItems.length === 0) {
+    const empty = makeElement("result-empty", "span");
+    empty.textContent = "なし";
+    resultItemList.appendChild(empty);
+    return;
+  }
+
+  collectedItems.forEach(() => {
+    const item = makeElement("result-item");
+    item.innerHTML = `${assetMarkup(assetPaths.experienceStone)}<span>経験ジェム</span>`;
+    resultItemList.appendChild(item);
+  });
+};
+
 const showResult = () => {
   stageCleared = true;
+  renderResultItems();
+  closeStageMenu();
+  gameScreen?.classList.add("is-modal-open");
   resultPanel?.classList.add("is-open");
   resultPanel?.setAttribute("aria-hidden", "false");
 };
@@ -616,6 +661,8 @@ const showGameOver = () => {
   pressedKeys.clear();
   setTilt(0, 0, "距離切れ");
   setControlStatus("距離切れ");
+  closeStageMenu();
+  gameScreen?.classList.add("is-modal-open");
   gameoverPanel?.classList.add("is-open");
   gameoverPanel?.setAttribute("aria-hidden", "false");
   pcBird?.classList.remove("is-moving");
@@ -718,7 +765,6 @@ const tryMovePlayer = (deltaCol, deltaRow) => {
     addTrailPoint(playerPosition);
     collectExperienceStones();
     updateDistanceHud();
-    playSound("move");
     if (travelDistance >= maxTravelDistance - 0.001 && !isAtGoal()) {
       showGameOver();
     }
@@ -798,6 +844,7 @@ const resetStage = ({ next = false } = {}) => {
   clearTilt();
   stageCleared = false;
   gameOver = false;
+  gameScreen?.classList.remove("is-modal-open");
   resultPanel?.classList.remove("is-open");
   resultPanel?.setAttribute("aria-hidden", "true");
   gameoverPanel?.classList.remove("is-open");
@@ -950,6 +997,7 @@ const resetGyroBaseline = () => {
 
 resetButton?.addEventListener("click", resetStage);
 resultResetButton?.addEventListener("click", resetStage);
+resultNextButton?.addEventListener("click", () => resetStage({ next: true }));
 gameoverRetryButton?.addEventListener("click", resetStage);
 menuButton?.addEventListener("click", () => {
   focusGameInput();

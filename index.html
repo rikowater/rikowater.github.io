@@ -26,8 +26,10 @@
 
         <section class="playfield" id="playfield" aria-label="雲の上のパズル盤面">
           <svg class="movement-trail" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+            <path id="movementTrailAura"></path>
             <path id="movementTrailGlow"></path>
             <path id="movementTrailPath"></path>
+            <path id="movementTrailSparkle"></path>
           </svg>
           <div class="board-layer" id="boardLayer"></div>
           <div class="air-birds" aria-hidden="true">
@@ -42,7 +44,10 @@
           </div>
         </div>
 
-        <div class="stage-label" id="stageLabel" aria-live="polite">ステージ99</div>
+        <div class="stage-info" aria-live="polite">
+          <div class="stage-label" id="stageLabel">ステージ99</div>
+          <div class="stage-copy">経験ジェムを集めながら ゴールを目指そう！</div>
+        </div>
 
         <div class="top-menu">
           <button class="round-button menu-button" id="menuButton" type="button" aria-label="メニュー" aria-expanded="false">
@@ -74,16 +79,23 @@
 
         <div class="result-panel" id="resultPanel" aria-hidden="true">
           <div class="result-inner">
-            <p class="result-kicker">Stage Clear</p>
-            <h1>光の羽に届いた</h1>
-            <button id="resultResetButton" type="button">もう一度</button>
+            <p class="result-kicker">STAGE CLEAR</p>
+            <h1>ゴールに到達した</h1>
+            <div class="result-items" aria-label="GETしたアイテム">
+              <p>GETしたアイテム</p>
+              <div class="result-item-list" id="resultItemList"></div>
+            </div>
+            <div class="result-actions">
+              <button id="resultResetButton" type="button">もう一度</button>
+              <button id="resultNextButton" type="button">次のステージへ</button>
+            </div>
           </div>
         </div>
 
         <div class="gameover-panel" id="gameoverPanel" aria-hidden="true">
           <div class="gameover-inner">
             <p class="gameover-kicker">GAMEOVER</p>
-            <h1>風が尽きてしまった</h1>
+            <h1>体力が尽きてしまった</h1>
             <button id="gameoverRetryButton" type="button">もう一度チャレンジ</button>
           </div>
         </div>

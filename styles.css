@@ -121,7 +121,7 @@ button {
 .player-layer,
 .hud,
 .distance-hud,
-.stage-label,
+.stage-info,
 .top-menu,
 .bottom-control,
 .pause-panel,
@@ -363,12 +363,17 @@ button {
   height: 3.9rem;
   margin-top: 0.1rem;
   opacity: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.1rem;
 }
 
 .menu-button span {
-  width: 1.55rem;
-  height: 0.22rem;
-  margin: 0.065rem 0;
+  width: 1.42rem;
+  height: 0.2rem;
+  margin: 0;
   display: block;
   border-radius: 99rem;
   background: currentColor;
@@ -397,7 +402,7 @@ button {
   height: 100%;
   overflow: visible;
   z-index: 12;
-  opacity: 0.82;
+  opacity: 0.9;
   pointer-events: none;
 }
 
@@ -407,27 +412,52 @@ button {
   stroke-linejoin: round;
 }
 
-#movementTrailGlow {
-  stroke: rgba(255, 220, 122, 0.18);
-  stroke-width: 2.2;
+#movementTrailAura {
+  stroke: rgba(133, 232, 255, 0.16);
+  stroke-width: 3.1;
   filter:
-    drop-shadow(0 0 0.22rem rgba(255, 231, 150, 0.54))
-    drop-shadow(0 0 0.6rem rgba(165, 232, 255, 0.28));
+    drop-shadow(0 0 0.7rem rgba(135, 231, 255, 0.44))
+    drop-shadow(0 0 1.4rem rgba(255, 220, 134, 0.25));
+}
+
+#movementTrailGlow {
+  stroke: rgba(255, 230, 151, 0.28);
+  stroke-width: 1.55;
+  filter:
+    drop-shadow(0 0 0.26rem rgba(255, 236, 168, 0.58))
+    drop-shadow(0 0 0.72rem rgba(165, 232, 255, 0.34));
 }
 
 #movementTrailPath {
-  stroke: rgba(255, 244, 188, 0.62);
-  stroke-width: 0.62;
-  stroke-dasharray: 1.35 1.85;
+  stroke: rgba(255, 252, 220, 0.82);
+  stroke-width: 0.38;
+  stroke-dasharray: 0.35 1.25;
   filter:
-    drop-shadow(0 0 0.14rem rgba(255, 248, 206, 0.62))
-    drop-shadow(0 0 0.36rem rgba(255, 218, 96, 0.26));
-  animation: trailFlow 5.2s linear infinite;
+    drop-shadow(0 0 0.16rem rgba(255, 252, 220, 0.8))
+    drop-shadow(0 0 0.42rem rgba(255, 218, 96, 0.32));
+  animation: trailFlow 3.8s linear infinite;
+}
+
+#movementTrailSparkle {
+  stroke: rgba(255, 255, 255, 0.9);
+  stroke-width: 0.2;
+  stroke-dasharray: 0.08 7.6;
+  stroke-dashoffset: 0;
+  filter:
+    drop-shadow(0 0 0.2rem rgba(255, 255, 255, 0.9))
+    drop-shadow(0 0 0.52rem rgba(255, 226, 131, 0.5));
+  animation: sparkleFlow 2.6s linear infinite;
 }
 
 @keyframes trailFlow {
   to {
-    stroke-dashoffset: -12;
+    stroke-dashoffset: -8;
+  }
+}
+
+@keyframes sparkleFlow {
+  to {
+    stroke-dashoffset: -24;
   }
 }
 
@@ -1264,28 +1294,43 @@ button {
   box-shadow: none;
 }
 
-.stage-label {
+.stage-info {
   left: 50%;
   top: 0.9rem;
   z-index: 42;
   transform: translateX(-50%);
-  min-width: 9.8rem;
-  padding: 0.56rem 1.05rem 0.58rem;
+  min-width: 16rem;
+  display: grid;
+  justify-items: center;
+  gap: 0.28rem;
+  padding: 0.5rem 1rem 0.6rem;
   border: 1px solid rgba(255, 255, 255, 0.52);
-  border-radius: 999rem;
+  border-radius: 1.1rem;
   background:
     linear-gradient(180deg, rgba(255, 252, 240, 0.82), rgba(225, 244, 246, 0.62));
   color: rgba(82, 72, 62, 0.95);
   box-shadow:
     inset 0 0 0 1px rgba(255, 255, 255, 0.32),
     0 0.55rem 1.2rem rgba(82, 100, 104, 0.13);
-  font-size: clamp(0.74rem, 1.05vw, 1rem);
-  font-weight: 800;
-  letter-spacing: 0;
-  line-height: 1;
   text-align: center;
   pointer-events: none;
   backdrop-filter: blur(0.25rem);
+}
+
+.stage-label {
+  font-size: clamp(0.8rem, 1.08vw, 1.05rem);
+  font-weight: 800;
+  letter-spacing: 0;
+  line-height: 1;
+}
+
+.stage-copy {
+  font-size: clamp(0.62rem, 0.82vw, 0.78rem);
+  font-weight: 800;
+  line-height: 1.2;
+  color: rgba(97, 86, 75, 0.82);
+  text-shadow: 0 0.08rem 0 rgba(255, 255, 255, 0.62);
+  white-space: nowrap;
 }
 
 .top-menu {
@@ -1296,6 +1341,15 @@ button {
   justify-items: end;
   gap: 0.55rem;
   pointer-events: auto;
+  transition:
+    opacity 160ms ease,
+    transform 160ms ease;
+}
+
+.game-screen.is-modal-open .top-menu {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-0.35rem);
 }
 
 .stage-menu {
@@ -1435,13 +1489,31 @@ button {
   color: rgba(82, 69, 58, 0.95);
 }
 
+.result-inner {
+  min-width: min(34rem, 78vw);
+  gap: 0.62rem;
+  padding: 1.55rem 2.25rem 1.8rem;
+}
+
 .gameover-inner {
   box-shadow:
     0 0 2rem rgba(255, 189, 164, 0.34),
     0 1.2rem 3.6rem rgba(54, 42, 40, 0.26);
 }
 
-.result-kicker,
+.result-kicker {
+  margin: 0;
+  color: rgba(111, 167, 179, 0.92);
+  font-size: clamp(2.45rem, 5.6vw, 6.1rem);
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  line-height: 0.92;
+  text-transform: uppercase;
+  text-shadow:
+    0 0.08rem 0 rgba(255, 255, 255, 0.75),
+    0 0 1.2rem rgba(180, 246, 255, 0.52);
+}
+
 .gameover-kicker {
   margin: 0;
   color: rgba(111, 167, 179, 0.92);
@@ -1455,13 +1527,83 @@ button {
   color: rgba(185, 112, 93, 0.92);
 }
 
-.result-inner h1,
 .gameover-inner h1 {
   margin: 0;
   font-size: clamp(1.65rem, 2.7vw, 3.35rem);
   line-height: 1.15;
   letter-spacing: 0;
   text-shadow: 0 0.08rem 0 rgba(255, 255, 255, 0.75);
+}
+
+.result-inner h1 {
+  margin: 0;
+  font-size: clamp(1.02rem, 1.7vw, 1.95rem);
+  line-height: 1.15;
+  letter-spacing: 0;
+  text-shadow: 0 0.08rem 0 rgba(255, 255, 255, 0.75);
+}
+
+.result-items {
+  min-width: min(22rem, 62vw);
+  display: grid;
+  justify-items: center;
+  gap: 0.45rem;
+  margin-top: 0.1rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: 0.7rem;
+  background: rgba(255, 255, 255, 0.28);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.32);
+}
+
+.result-items p {
+  margin: 0;
+  color: rgba(106, 91, 76, 0.78);
+  font-size: clamp(0.7rem, 0.9vw, 0.9rem);
+  font-weight: 800;
+}
+
+.result-item-list {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.result-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.24rem 0.52rem 0.26rem;
+  border-radius: 999rem;
+  background: rgba(255, 251, 235, 0.52);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.42);
+  color: rgba(92, 78, 66, 0.9);
+  font-size: clamp(0.66rem, 0.82vw, 0.82rem);
+  font-weight: 800;
+}
+
+.result-item img {
+  width: 1.5rem;
+  height: 1.5rem;
+  object-fit: contain;
+  filter: drop-shadow(0 0 0.35rem rgba(255, 234, 142, 0.48));
+}
+
+.result-empty {
+  color: rgba(104, 92, 82, 0.58);
+  font-size: clamp(0.68rem, 0.82vw, 0.82rem);
+  font-weight: 800;
+}
+
+.result-actions {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.62rem;
+  margin-top: 0.22rem;
 }
 
 .result-inner button,
@@ -1477,6 +1619,10 @@ button {
     inset 0 0 0 1px rgba(255, 255, 255, 0.62),
     0 0.5rem 1.2rem rgba(86, 82, 71, 0.18);
   cursor: pointer;
+}
+
+.result-actions button {
+  margin-top: 0;
 }
 
 .stage-toast {
