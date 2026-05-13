@@ -98,12 +98,13 @@ button {
 .sky-paint,
 .soft-fog,
 .far-ruins,
-.trail-layer,
+.movement-trail,
 .playfield,
 .player-layer,
 .hud,
 .distance-hud,
-.gyro-debug,
+.stage-label,
+.top-menu,
 .bottom-control,
 .pause-panel,
 .stage-toast {
@@ -371,53 +372,43 @@ button {
   pointer-events: none;
 }
 
-.trail-layer {
+.movement-trail {
   inset: 0;
   width: 100%;
   height: 100%;
   overflow: visible;
-  z-index: 6;
-  opacity: 0.16;
+  z-index: 12;
+  opacity: 0.82;
   pointer-events: none;
 }
 
-.trail-layer path {
+.movement-trail path {
   fill: none;
   stroke-linecap: round;
   stroke-linejoin: round;
-  stroke-dasharray: 10 16;
-  animation: trailFlow 3.8s linear infinite;
 }
 
-.gold-trail {
-  stroke: rgba(255, 221, 116, 0.86);
-  stroke-width: 4.2;
+#movementTrailGlow {
+  stroke: rgba(255, 220, 122, 0.18);
+  stroke-width: 2.2;
   filter:
-    drop-shadow(0 0 0.28rem rgba(255, 235, 151, 0.9))
-    drop-shadow(0 0 0.85rem rgba(255, 211, 96, 0.56));
+    drop-shadow(0 0 0.22rem rgba(255, 231, 150, 0.54))
+    drop-shadow(0 0 0.6rem rgba(165, 232, 255, 0.28));
 }
 
-.trail-main {
-  stroke-width: 5.2;
-}
-
-.blue-trail {
-  stroke: rgba(198, 245, 255, 0.68);
-  stroke-width: 3.5;
+#movementTrailPath {
+  stroke: rgba(255, 244, 188, 0.62);
+  stroke-width: 0.62;
+  stroke-dasharray: 1.35 1.85;
   filter:
-    drop-shadow(0 0 0.28rem rgba(214, 251, 255, 0.76))
-    drop-shadow(0 0 0.8rem rgba(124, 216, 232, 0.42));
-  animation-duration: 4.6s;
-}
-
-.blue-trail.small {
-  stroke-width: 2.6;
-  opacity: 0.7;
+    drop-shadow(0 0 0.14rem rgba(255, 248, 206, 0.62))
+    drop-shadow(0 0 0.36rem rgba(255, 218, 96, 0.26));
+  animation: trailFlow 5.2s linear infinite;
 }
 
 @keyframes trailFlow {
   to {
-    stroke-dashoffset: -52;
+    stroke-dashoffset: -12;
   }
 }
 
@@ -1180,14 +1171,15 @@ button {
 }
 
 .distance-hud {
-  right: 1rem;
-  top: 1rem;
+  left: 50%;
+  bottom: 1rem;
   z-index: 43;
-  width: clamp(9.4rem, 15vw, 15.5rem);
+  width: clamp(16rem, 38vw, 31rem);
   display: flex;
   align-items: center;
   gap: 0.55rem;
   padding: 0.45rem 0.62rem 0.45rem 0.52rem;
+  transform: translateX(-50%);
   border: 1px solid rgba(255, 255, 255, 0.5);
   border-radius: 999rem;
   background:
@@ -1253,41 +1245,84 @@ button {
   box-shadow: none;
 }
 
-.gyro-debug {
+.stage-label {
   left: 50%;
-  top: 1rem;
+  top: 0.9rem;
   z-index: 42;
   transform: translateX(-50%);
-  pointer-events: auto;
-}
-
-.gyro-mode-button {
   min-width: 9.8rem;
-  border: 1px solid rgba(255, 255, 255, 0.58);
+  padding: 0.56rem 1.05rem 0.58rem;
+  border: 1px solid rgba(255, 255, 255, 0.52);
   border-radius: 999rem;
-  padding: 0.56rem 0.95rem;
   background:
-    linear-gradient(180deg, rgba(255, 252, 240, 0.86), rgba(226, 244, 246, 0.72));
+    linear-gradient(180deg, rgba(255, 252, 240, 0.82), rgba(225, 244, 246, 0.62));
   color: rgba(82, 72, 62, 0.95);
   box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.36),
-    0 0.55rem 1.2rem rgba(82, 100, 104, 0.16);
+    inset 0 0 0 1px rgba(255, 255, 255, 0.32),
+    0 0.55rem 1.2rem rgba(82, 100, 104, 0.13);
   font-size: clamp(0.74rem, 1.05vw, 1rem);
   font-weight: 800;
   letter-spacing: 0;
   line-height: 1;
-  cursor: pointer;
+  text-align: center;
+  pointer-events: none;
   backdrop-filter: blur(0.25rem);
 }
 
-.gyro-mode-button[aria-pressed="true"] {
+.top-menu {
+  right: 1rem;
+  top: 1rem;
+  z-index: 82;
+  display: grid;
+  justify-items: end;
+  gap: 0.55rem;
+  pointer-events: auto;
+}
+
+.stage-menu {
+  min-width: 12rem;
+  display: grid;
+  gap: 0.42rem;
+  padding: 0.6rem;
+  border: 1px solid rgba(255, 255, 255, 0.58);
+  border-radius: 0.8rem;
   background:
-    linear-gradient(180deg, rgba(230, 252, 255, 0.9), rgba(193, 232, 244, 0.76));
-  color: rgba(50, 91, 100, 0.98);
+    linear-gradient(180deg, rgba(255, 252, 240, 0.88), rgba(226, 244, 246, 0.78));
   box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.46),
-    0 0 1rem rgba(159, 238, 255, 0.34),
-    0 0.55rem 1.2rem rgba(82, 100, 104, 0.16);
+    inset 0 0 0 1px rgba(255, 255, 255, 0.36),
+    0 0.75rem 1.8rem rgba(72, 94, 100, 0.18);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-0.25rem);
+  backdrop-filter: blur(0.25rem);
+  transition:
+    opacity 160ms ease,
+    transform 160ms ease;
+}
+
+.stage-menu.is-open {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.stage-menu button {
+  min-height: 2.15rem;
+  border: 0;
+  border-radius: 0.55rem;
+  padding: 0.54rem 0.8rem;
+  background: rgba(255, 255, 255, 0.42);
+  color: rgba(82, 72, 62, 0.96);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.42);
+  font-size: clamp(0.72rem, 0.95vw, 0.92rem);
+  font-weight: 800;
+  text-align: left;
+  cursor: pointer;
+}
+
+.stage-menu button:hover {
+  background: rgba(255, 255, 255, 0.64);
 }
 
 .bottom-left {
@@ -1461,19 +1496,6 @@ button {
   color: var(--ink);
   font-weight: 800;
   cursor: pointer;
-}
-
-.game-screen.hinting .trail-layer path {
-  stroke-dasharray: 6 10;
-  animation-duration: 1.4s;
-}
-
-.game-screen.hinting .spark {
-  animation-duration: 900ms;
-}
-
-.game-screen.hinting .goal-pad {
-  animation: featherGlow 900ms ease-in-out infinite alternate;
 }
 
 @keyframes featherGlow {

@@ -1,19 +1,21 @@
 const boardLayer = document.querySelector("#boardLayer");
 const gameScreen = document.querySelector("#gameScreen");
 const resetButton = document.querySelector("#resetButton");
-const hintButton = document.querySelector("#hintButton");
-const menuButton = document.querySelector(".menu-button");
-const pausePanel = document.querySelector("#pausePanel");
-const resumeButton = document.querySelector("#resumeButton");
+const menuButton = document.querySelector("#menuButton");
+const stageMenu = document.querySelector("#stageMenu");
+const nextStageButton = document.querySelector("#nextStageButton");
+const retryStageButton = document.querySelector("#retryStageButton");
 const pcBird = document.querySelector("#pcBird");
 const birdSprite = document.querySelector("#birdSprite");
 const goalMarker = document.querySelector("#goalMarker");
 const resultPanel = document.querySelector("#resultPanel");
 const resultResetButton = document.querySelector("#resultResetButton");
 const stageToast = document.querySelector("#stageToast");
-const gyroModeButton = document.querySelector("#gyroModeButton");
 const distanceHud = document.querySelector("#distanceHud");
 const distanceBarFill = document.querySelector("#distanceBarFill");
+const stageLabel = document.querySelector("#stageLabel");
+const movementTrailPath = document.querySelector("#movementTrailPath");
+const movementTrailGlow = document.querySelector("#movementTrailGlow");
 const portraitLockedLandscapeQuery = window.matchMedia?.("(orientation: portrait) and (max-width: 900px)");
 
 const rowCount = 8;
@@ -100,6 +102,8 @@ const assetMarkup = (src) => `<img class="asset-img" src="${src}" alt="" />`;
 
 const randomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
 const randomChoice = (items) => items[Math.floor(Math.random() * items.length)];
+const shuffle = (items) => [...items].sort(() => Math.random() - 0.5);
+const manhattanDistance = (a, b) => Math.abs(a.col - b.col) + Math.abs(a.row - b.row);
 
 const inPlayableBounds = (col, row) =>
   col >= playableBounds.minCol &&
@@ -111,7 +115,7 @@ const createStageGrid = () => {
   const grid = Array.from({ length: rowCount }, () => Array.from({ length: colCount }, () => " "));
   for (let row = playableBounds.minRow; row <= playableBounds.maxRow; row += 1) {
     for (let col = playableBounds.minCol; col <= playableBounds.maxCol; col += 1) {
-      grid[row][col] = "#";
+      grid[row][col] = ".";
     }
   }
   return grid;
@@ -125,10 +129,36 @@ const shuffleDirections = () =>
     { x: 0, y: -1 }
   ].sort(() => Math.random() - 0.5);
 
+const isGridWalkable = (grid, col, row) => {
+  const cell = grid[row]?.[col] || " ";
+  return cell !== " " && cell !== "#";
+};
+
+const canReachGoal = (grid, start, goal) => {
+  const queue = [start];
+  const visited = new Set([`${start.col}:${start.row}`]);
+
+  while (queue.length > 0) {
+    const current = queue.shift();
+    if (current.col === goal.col && current.row === goal.row) return true;
+
+    shuffleDirections().forEach((direction) => {
+      const next = { col: current.col + direction.x, row: current.row + direction.y };
+      const key = `${next.col}:${next.row}`;
+      if (visited.has(key) || !isGridWalkable(grid, next.col, next.row)) return;
+      visited.add(key);
+      queue.push(next);
+    });
+  }
+
+  return false;
+};
+
+const cloudNeighborCount = (grid, col, row) =>
+  shuffleDirections().filter((direction) => grid[row + direction.y]?.[col + direction.x] === "#").length;
+
 const generateStageMap = () => {
   const grid = createStageGrid();
-  const carvedCells = [];
-  const carvedKeys = new Set();
   const start = {
     col: randomInt(playableBounds.minCol, playableBounds.minCol + 1),
     row: randomInt(playableBounds.minRow + 1, playableBounds.maxRow - 1)
@@ -137,69 +167,42 @@ const generateStageMap = () => {
     col: randomInt(playableBounds.maxCol - 1, playableBounds.maxCol),
     row: randomInt(playableBounds.minRow, playableBounds.maxRow)
   };
+  const cloudTarget = randomInt(7, 12);
+  const cloudCandidates = [];
 
-  const carve = ({ col, row }) => {
-    if (!inPlayableBounds(col, row)) return false;
-    const key = `${col}:${row}`;
-    if (!carvedKeys.has(key)) {
-      carvedKeys.add(key);
-      carvedCells.push({ col, row });
+  for (let row = playableBounds.minRow; row <= playableBounds.maxRow; row += 1) {
+    for (let col = playableBounds.minCol; col <= playableBounds.maxCol; col += 1) {
+      const position = { col, row };
+      if (manhattanDistance(position, start) <= 1 || manhattanDistance(position, goal) <= 1) continue;
+      cloudCandidates.push(position);
+    }
+  }
+
+  let cloudsPlaced = 0;
+  shuffle(cloudCandidates).forEach(({ col, row }) => {
+    if (cloudsPlaced >= cloudTarget) return;
+    if (cloudNeighborCount(grid, col, row) > 0 && Math.random() < 0.78) return;
+
+    grid[row][col] = "#";
+    if (canReachGoal(grid, start, goal)) {
+      cloudsPlaced += 1;
+      return;
     }
     grid[row][col] = ".";
-    return true;
-  };
+  });
 
-  let current = { ...start };
-  carve(current);
-
-  for (let guard = 0; guard < 140 && (current.col !== goal.col || current.row !== goal.row); guard += 1) {
-    const preferred = [];
-    if (current.col < goal.col) preferred.push({ x: 1, y: 0 }, { x: 1, y: 0 }, { x: 1, y: 0 });
-    if (current.col > goal.col) preferred.push({ x: -1, y: 0 }, { x: -1, y: 0 });
-    if (current.row < goal.row) preferred.push({ x: 0, y: 1 }, { x: 0, y: 1 });
-    if (current.row > goal.row) preferred.push({ x: 0, y: -1 }, { x: 0, y: -1 });
-
-    const possible = shuffleDirections().filter((direction) =>
-      inPlayableBounds(current.col + direction.x, current.row + direction.y)
-    );
-    const choices = Math.random() < 0.72 && preferred.length > 0 ? preferred : possible;
-    const step = randomChoice(choices.filter((direction) =>
-      inPlayableBounds(current.col + direction.x, current.row + direction.y)
-    ));
-
-    if (!step) break;
-    current = { col: current.col + step.x, row: current.row + step.y };
-    carve(current);
+  if (cloudsPlaced < cloudTarget) {
+    shuffle(cloudCandidates).forEach(({ col, row }) => {
+      if (cloudsPlaced >= cloudTarget || grid[row][col] === "#") return;
+      if (cloudNeighborCount(grid, col, row) > 1) return;
+      grid[row][col] = "#";
+      if (canReachGoal(grid, start, goal)) {
+        cloudsPlaced += 1;
+        return;
+      }
+      grid[row][col] = ".";
+    });
   }
-
-  while (current.col !== goal.col) {
-    current = { col: current.col + Math.sign(goal.col - current.col), row: current.row };
-    carve(current);
-  }
-  while (current.row !== goal.row) {
-    current = { col: current.col, row: current.row + Math.sign(goal.row - current.row) };
-    carve(current);
-  }
-
-  const targetFloorCount = randomInt(31, 40);
-  let growthGuard = 0;
-  while (carvedCells.length < targetFloorCount && growthGuard < 220) {
-    growthGuard += 1;
-    const seed = randomChoice(carvedCells);
-    const options = shuffleDirections()
-      .map((direction) => ({ col: seed.col + direction.x, row: seed.row + direction.y }))
-      .filter(({ col, row }) => inPlayableBounds(col, row) && grid[row][col] === "#");
-    if (options.length > 0) carve(randomChoice(options));
-  }
-
-  [
-    { col: start.col + 1, row: start.row },
-    { col: start.col, row: start.row - 1 },
-    { col: start.col, row: start.row + 1 },
-    { col: goal.col - 1, row: goal.row },
-    { col: goal.col, row: goal.row - 1 },
-    { col: goal.col, row: goal.row + 1 }
-  ].forEach(carve);
 
   grid[start.row][start.col] = "B";
   grid[goal.row][goal.col] = "G";
@@ -255,6 +258,8 @@ let collectibles = [];
 let maxTravelDistance = 1;
 let travelDistance = 0;
 let stageBuildId = 0;
+let stageNumber = 99;
+let trailPoints = [];
 let stepCount = 0;
 let toastTimer;
 let controlStatus = "待機";
@@ -263,21 +268,17 @@ let tiltY = 0;
 let deviceGyroActive = false;
 let gyroEnableInProgress = false;
 let deviceBaseline = null;
-let gyroMode = "relative";
 let lastFrameAt = 0;
 let lastBlockedAt = 0;
+let lastMoveSoundAt = 0;
 let activeDirection = "idle";
 let stageCleared = false;
+let audioContext;
 const pressedKeys = new Set();
 const keyHoldTimers = new Map();
 const inputDeadzone = 0.08;
 const maxCellsPerSecond = 3.25;
 const gyroTiltDegrees = 24;
-const rawGyroTiltDegrees = 28;
-
-const shuffle = (items) => [...items].sort(() => Math.random() - 0.5);
-
-const manhattanDistance = (a, b) => Math.abs(a.col - b.col) + Math.abs(a.row - b.row);
 
 const walkableStageCells = () => {
   const cells = [];
@@ -339,9 +340,115 @@ const updateDistanceHud = () => {
 
 const resetTravelDistance = () => {
   const routeDistance = shortestPathDistance();
-  maxTravelDistance = Math.ceil(Math.max(18, routeDistance * 1.85 + collectibles.length * 1.5 + 5));
+  maxTravelDistance = Math.ceil(Math.max(12, routeDistance * 1.35 + collectibles.length * 0.8 + 2));
   travelDistance = 0;
   updateDistanceHud();
+};
+
+const updateStageLabel = () => {
+  if (stageLabel) stageLabel.textContent = `ステージ ${stageNumber}（仮）`;
+};
+
+const trailPointFor = (position) => {
+  const pos = boardPosition(position.col, position.row);
+  return { x: pos.x, y: pos.y };
+};
+
+const updateMovementTrail = () => {
+  const pathData =
+    trailPoints.length < 2
+      ? ""
+      : trailPoints
+          .map((point, index) => `${index === 0 ? "M" : "L"} ${point.x.toFixed(2)} ${point.y.toFixed(2)}`)
+          .join(" ");
+  movementTrailPath?.setAttribute("d", pathData);
+  movementTrailGlow?.setAttribute("d", pathData);
+};
+
+const addTrailPoint = (position, force = false) => {
+  const nextPoint = trailPointFor(position);
+  const previousPoint = trailPoints.at(-1);
+
+  if (!previousPoint) {
+    trailPoints.push(nextPoint);
+  } else {
+    const distance = Math.hypot(nextPoint.x - previousPoint.x, nextPoint.y - previousPoint.y);
+    if (force || distance > 0.7) {
+      trailPoints.push(nextPoint);
+    } else {
+      trailPoints[trailPoints.length - 1] = nextPoint;
+    }
+  }
+
+  if (trailPoints.length > 72) trailPoints = trailPoints.slice(-72);
+  updateMovementTrail();
+};
+
+const resetTrail = () => {
+  trailPoints = [trailPointFor(playerPosition)];
+  updateMovementTrail();
+};
+
+const resumeAudio = () => {
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContextClass) return null;
+  if (!audioContext) audioContext = new AudioContextClass();
+  if (audioContext.state === "suspended") void audioContext.resume();
+  return audioContext;
+};
+
+const playTone = (frequency, delay = 0, duration = 0.14, gainValue = 0.035, type = "sine") => {
+  const context = resumeAudio();
+  if (!context) return;
+  const startAt = context.currentTime + delay;
+  const oscillator = context.createOscillator();
+  const gain = context.createGain();
+  oscillator.type = type;
+  oscillator.frequency.setValueAtTime(frequency, startAt);
+  gain.gain.setValueAtTime(0.0001, startAt);
+  gain.gain.exponentialRampToValueAtTime(gainValue, startAt + 0.018);
+  gain.gain.exponentialRampToValueAtTime(0.0001, startAt + duration);
+  oscillator.connect(gain);
+  gain.connect(context.destination);
+  oscillator.start(startAt);
+  oscillator.stop(startAt + duration + 0.04);
+};
+
+const playSound = (name) => {
+  if (name === "move") {
+    const now = performance.now();
+    if (now - lastMoveSoundAt < 170) return;
+    lastMoveSoundAt = now;
+    playTone(520, 0, 0.08, 0.012, "sine");
+    return;
+  }
+
+  if (name === "collect") {
+    playTone(740, 0, 0.13, 0.034, "sine");
+    playTone(1060, 0.055, 0.18, 0.026, "triangle");
+    return;
+  }
+
+  if (name === "blocked") {
+    playTone(190, 0, 0.1, 0.026, "triangle");
+    return;
+  }
+
+  if (name === "goal") {
+    playTone(620, 0, 0.16, 0.032, "sine");
+    playTone(880, 0.09, 0.18, 0.028, "sine");
+    playTone(1240, 0.18, 0.24, 0.02, "triangle");
+    return;
+  }
+
+  if (name === "menu") {
+    playTone(560, 0, 0.08, 0.018, "sine");
+    return;
+  }
+
+  if (name === "reset") {
+    playTone(430, 0, 0.11, 0.02, "triangle");
+  }
 };
 
 const renderStage = () => {
@@ -387,6 +494,8 @@ const applyStageState = () => {
   playerPosition = { col: startCell.col, row: startCell.row };
   collectibles = createCollectibles();
   resetTravelDistance();
+  resetTrail();
+  updateStageLabel();
   renderStage();
 };
 
@@ -414,25 +523,6 @@ const focusGameInput = () => {
 const setControlStatus = (message) => {
   controlStatus = message;
   if (gameScreen) gameScreen.dataset.controlStatus = message;
-};
-
-const updateGyroModeButton = () => {
-  if (!gyroModeButton) return;
-  const isRawMode = gyroMode === "raw";
-  gyroModeButton.textContent = isRawMode ? "ジャイロ: そのまま" : "ジャイロ: 基準あり";
-  gyroModeButton.setAttribute("aria-pressed", String(isRawMode));
-  gyroModeButton.setAttribute(
-    "aria-label",
-    isRawMode ? "ジャイロ操作を端末の傾きそのままにする" : "ジャイロ操作を現在の傾きを基準にする"
-  );
-};
-
-const setGyroMode = (nextMode) => {
-  gyroMode = nextMode === "raw" ? "raw" : "relative";
-  deviceBaseline = null;
-  if (gyroMode === "relative") setTilt(0, 0, "基準");
-  updateGyroModeButton();
-  setControlStatus(gyroMode === "raw" ? "そのまま" : "基準あり");
 };
 
 const placeMarker = (element, position, xName, yName) => {
@@ -524,6 +614,7 @@ const showBlockedFeedback = () => {
   const now = Date.now();
   if (now - lastBlockedAt < 260) return;
   lastBlockedAt = now;
+  playSound("blocked");
   popClass(pcBird, "is-blocked", 220);
 };
 
@@ -534,6 +625,7 @@ const collectExperienceStones = () => {
     if (distance > 0.45) return;
 
     item.collected = true;
+    playSound("collect");
     const stoneElement = boardLayer.querySelector(`[data-collectible-id="${item.id}"]`);
     stoneElement?.classList.add("is-collected");
     window.setTimeout(() => stoneElement?.remove(), 260);
@@ -581,8 +673,10 @@ const tryMovePlayer = (deltaCol, deltaRow) => {
   if (moved) {
     const actualDistance = Math.hypot(playerPosition.col - beforePosition.col, playerPosition.row - beforePosition.row);
     travelDistance = Math.min(maxTravelDistance, travelDistance + actualDistance);
+    addTrailPoint(playerPosition);
     collectExperienceStones();
     updateDistanceHud();
+    playSound("move");
   }
 
   return moved;
@@ -605,6 +699,7 @@ const updateGoalState = () => {
     if (!pcBird?.classList.contains("is-goal")) {
       pcBird?.classList.add("is-goal");
       setControlStatus("到着");
+      playSound("goal");
       showResult();
     }
   } else {
@@ -636,30 +731,53 @@ const animatePlayer = (timestamp) => {
   window.requestAnimationFrame(animatePlayer);
 };
 
-const resetStage = () => {
-  if (gyroMode === "relative") {
-    clearTilt();
-  } else {
-    deviceBaseline = null;
+const closeStageMenu = () => {
+  stageMenu?.classList.remove("is-open");
+  stageMenu?.setAttribute("aria-hidden", "true");
+  menuButton?.setAttribute("aria-expanded", "false");
+};
+
+const toggleStageMenu = () => {
+  const isOpen = stageMenu?.classList.contains("is-open");
+  if (isOpen) {
+    closeStageMenu();
+    return;
   }
+
+  stageMenu?.classList.add("is-open");
+  stageMenu?.setAttribute("aria-hidden", "false");
+  menuButton?.setAttribute("aria-expanded", "true");
+  playSound("menu");
+};
+
+const resetStage = ({ next = false } = {}) => {
+  clearTilt();
   stageCleared = false;
   resultPanel?.classList.remove("is-open");
   resultPanel?.setAttribute("aria-hidden", "true");
   pressedKeys.clear();
   keyHoldTimers.forEach((timer) => window.clearTimeout(timer));
   keyHoldTimers.clear();
-  rebuildStage();
+  if (next) {
+    stageNumber += 1;
+    rebuildStage();
+  } else {
+    applyStageState();
+  }
   stepCount = 0;
   updatePlayer();
   pcBird?.classList.remove("is-goal", "is-blocked", "is-moving");
   setBirdDirection("idle");
   popClass(pcBird, "reset-pop", 620);
   setControlStatus("待機");
+  closeStageMenu();
+  playSound("reset");
 };
 
 window.addEventListener("keydown", (event) => {
   if (!keyToVector[event.key]) return;
   event.preventDefault();
+  resumeAudio();
   pressedKeys.add(event.key);
   pulseKeyboardMove(event.key);
   window.clearTimeout(keyHoldTimers.get(event.key));
@@ -717,13 +835,6 @@ function handleDeviceOrientation(event) {
   const beta = Number(event.beta);
   const gamma = Number(event.gamma);
   if (!Number.isFinite(beta) || !Number.isFinite(gamma)) return;
-
-  if (gyroMode === "raw") {
-    deviceBaseline = null;
-    const screenTilt = tiltForScreen(beta, gamma);
-    setTilt(screenTilt.x / rawGyroTiltDegrees, screenTilt.y / rawGyroTiltDegrees, "そのまま");
-    return;
-  }
 
   const angle = screenAngle();
   if (!deviceBaseline || deviceBaseline.angle !== angle) {
@@ -787,34 +898,20 @@ const bindGyroStart = () => {
 
 const resetGyroBaseline = () => {
   if (!deviceGyroActive) return;
-  if (gyroMode === "relative") {
-    clearTilt();
-  } else {
-    deviceBaseline = null;
-  }
+  clearTilt();
 };
 
 resetButton?.addEventListener("click", resetStage);
 resultResetButton?.addEventListener("click", resetStage);
-gyroModeButton?.addEventListener("click", () => {
-  focusGameInput();
-  setGyroMode(gyroMode === "relative" ? "raw" : "relative");
-  void enableDeviceGyro();
-});
-hintButton?.addEventListener("click", () => {
-  gameScreen.classList.add("hinting");
-  window.setTimeout(() => gameScreen.classList.remove("hinting"), 1600);
-});
 menuButton?.addEventListener("click", () => {
-  pausePanel.classList.add("is-open");
-  pausePanel.setAttribute("aria-hidden", "false");
+  focusGameInput();
+  toggleStageMenu();
 });
-resumeButton?.addEventListener("click", () => {
-  pausePanel.classList.remove("is-open");
-  pausePanel.setAttribute("aria-hidden", "true");
-});
-pausePanel?.addEventListener("click", (event) => {
-  if (event.target === pausePanel) resumeButton.click();
+nextStageButton?.addEventListener("click", () => resetStage({ next: true }));
+retryStageButton?.addEventListener("click", () => resetStage());
+window.addEventListener("pointerdown", (event) => {
+  resumeAudio();
+  if (!event.target?.closest?.(".top-menu")) closeStageMenu();
 });
 window.addEventListener("orientationchange", resetGyroBaseline);
 window.screen?.orientation?.addEventListener?.("change", resetGyroBaseline);
@@ -824,7 +921,6 @@ window.addEventListener("pointerdown", focusGameInput);
 applyStageState();
 updatePlayer();
 setTilt(0, 0);
-updateGyroModeButton();
 focusGameInput();
 bindGyroStart();
 window.requestAnimationFrame(animatePlayer);
