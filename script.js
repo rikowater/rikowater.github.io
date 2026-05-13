@@ -12,6 +12,7 @@ const resultPanel = document.querySelector("#resultPanel");
 const resultResetButton = document.querySelector("#resultResetButton");
 const stageToast = document.querySelector("#stageToast");
 const gyroModeButton = document.querySelector("#gyroModeButton");
+const portraitLockedLandscapeQuery = window.matchMedia?.("(orientation: portrait) and (max-width: 900px)");
 
 const rowCount = 8;
 const colCount = 13;
@@ -570,7 +571,8 @@ const clearTilt = () => {
 
 const screenAngle = () => {
   const angle = Number(window.screen?.orientation?.angle ?? window.orientation ?? 0);
-  return ((angle % 360) + 360) % 360;
+  const lockedLandscapeOffset = portraitLockedLandscapeQuery?.matches ? 90 : 0;
+  return (((angle + lockedLandscapeOffset) % 360) + 360) % 360;
 };
 
 const tiltForScreen = (betaDelta, gammaDelta) => {
@@ -688,6 +690,7 @@ pausePanel?.addEventListener("click", (event) => {
 });
 window.addEventListener("orientationchange", resetGyroBaseline);
 window.screen?.orientation?.addEventListener?.("change", resetGyroBaseline);
+portraitLockedLandscapeQuery?.addEventListener?.("change", resetGyroBaseline);
 window.addEventListener("pointerdown", focusGameInput);
 
 renderStage();
