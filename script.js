@@ -42,7 +42,8 @@ const assetPaths = {
   cloud: "./assets/tiles/cloud-wall-generated.png",
   startPad: "./assets/gimmicks/start-pad.png",
   goalPad: "./assets/gimmicks/goal-pad.png",
-  experienceStone: "./assets/gimmicks/experience-stone.png"
+  experienceStone: "./assets/gimmicks/experience-stone.png",
+  goalSound: "./assets/sounds/clear-shuin.mp3"
 };
 
 const birdSprites = {
@@ -288,6 +289,9 @@ let activeDirection = "idle";
 let stageCleared = false;
 let gameOver = false;
 let audioContext;
+const goalSoundClip = new Audio(assetPaths.goalSound);
+goalSoundClip.preload = "auto";
+goalSoundClip.volume = 0.82;
 const pressedKeys = new Set();
 const keyHoldTimers = new Map();
 const inputDeadzone = 0.08;
@@ -480,11 +484,19 @@ const resetTrail = () => {
   updateMovementTrail();
 };
 
+const playAudioClip = (clip) => {
+  if (!clip) return;
+  clip.currentTime = 0;
+  const playPromise = clip.play();
+  if (playPromise?.catch) playPromise.catch(() => {});
+};
+
 const resumeAudio = () => {
   const AudioContextClass = window.AudioContext || window.webkitAudioContext;
   if (!AudioContextClass) return null;
   if (!audioContext) audioContext = new AudioContextClass();
   if (audioContext.state === "suspended") void audioContext.resume();
+  goalSoundClip.load();
   return audioContext;
 };
 
@@ -537,9 +549,7 @@ const playSound = (name) => {
   }
 
   if (name === "goal") {
-    playSweep(420, 1560, 0, 0.34, 0.036, "sine");
-    playSweep(760, 2240, 0.035, 0.28, 0.018, "triangle");
-    playTone(1680, 0.2, 0.18, 0.018, "sine");
+    playAudioClip(goalSoundClip);
     return;
   }
 
@@ -554,9 +564,10 @@ const playSound = (name) => {
   }
 
   if (name === "gameover") {
-    playTone(420, 0, 0.28, 0.024, "sine");
-    playTone(310, 0.16, 0.34, 0.02, "triangle");
-    playTone(220, 0.34, 0.45, 0.016, "sine");
+    playTone(92, 0, 0.12, 0.038, "sawtooth");
+    playTone(68, 0.12, 0.13, 0.034, "sawtooth");
+    playTone(138, 0.02, 0.08, 0.018, "square");
+    playTone(118, 0.15, 0.08, 0.016, "square");
   }
 };
 
