@@ -879,17 +879,17 @@ const animatePlayer = (timestamp) => {
 
   if (!stageCleared && !gameOver && (moveVector.strength > 0 || activeWind)) {
     const windVector = activeWind ? windVectors[activeWind.direction] : { x: 0, y: 0 };
-    const windWobble = activeWind ? Math.sin(timestamp / 150) * 0.22 : 0;
+    const windWobble = activeWind ? Math.sin(timestamp / 120) * 0.42 : 0;
     const wobbleVector =
       activeWind?.orientation === "horizontal"
         ? { x: 0, y: windWobble }
         : { x: windWobble, y: 0 };
-    const controlScale = activeWind ? 0.62 : 1;
+    const controlScale = activeWind ? 0.44 : 1;
     const inputSpeed = maxCellsPerSecond * moveVector.strength * controlScale;
-    const windSpeed = activeWind ? 0.88 : 0;
+    const windSpeed = activeWind ? 1.65 : 0;
     const directionVector = {
-      x: moveVector.x * moveVector.strength + windVector.x * (activeWind ? 0.55 : 0),
-      y: moveVector.y * moveVector.strength + windVector.y * (activeWind ? 0.55 : 0)
+      x: moveVector.x * moveVector.strength + windVector.x * (activeWind ? 0.95 : 0),
+      y: moveVector.y * moveVector.strength + windVector.y * (activeWind ? 0.95 : 0)
     };
     const deltaCol = (moveVector.x * inputSpeed + windVector.x * windSpeed + wobbleVector.x) * deltaSeconds;
     const deltaRow = (moveVector.y * inputSpeed + windVector.y * windSpeed + wobbleVector.y) * deltaSeconds;
