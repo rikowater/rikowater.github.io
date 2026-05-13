@@ -11,6 +11,7 @@ const goalMarker = document.querySelector("#goalMarker");
 const resultPanel = document.querySelector("#resultPanel");
 const resultResetButton = document.querySelector("#resultResetButton");
 const stageToast = document.querySelector("#stageToast");
+const gyroModeButton = document.querySelector("#gyroModeButton");
 
 const rowCount = 8;
 const colCount = 13;
@@ -254,6 +255,7 @@ let tiltY = 0;
 let deviceGyroActive = false;
 let gyroEnableInProgress = false;
 let deviceBaseline = null;
+let gyroMode = "relative";
 let lastFrameAt = 0;
 let lastBlockedAt = 0;
 let activeDirection = "idle";
@@ -263,6 +265,7 @@ const keyHoldTimers = new Map();
 const inputDeadzone = 0.08;
 const maxCellsPerSecond = 3.25;
 const gyroTiltDegrees = 24;
+const rawGyroTiltDegrees = 45;
 
 const renderStage = () => {
   boardLayer.replaceChildren();
@@ -322,6 +325,25 @@ const focusGameInput = () => {
 const setControlStatus = (message) => {
   controlStatus = message;
   if (gameScreen) gameScreen.dataset.controlStatus = message;
+};
+
+const updateGyroModeButton = () => {
+  if (!gyroModeButton) return;
+  const isRawMode = gyroMode === "raw";
+  gyroModeButton.textContent = isRawMode ? "ジャイロ: そのまま" : "ジャイロ: 基準あり";
+  gyroModeButton.setAttribute("aria-pressed", String(isRawMode));
+  gyroModeButton.setAttribute(
+    "aria-label",
+    isRawMode ? "ジャイロ操作を端末の傾きそのままにする" : "ジャイロ操作を現在の傾きを基準にする"
+  );
+};
+
+const setGyroMode = (nextMode) => {
+  gyroMode = nextMode === "raw" ? "raw" : "relative";
+  deviceBaseline = null;
+  if (gyroMode === "relative") setTilt(0, 0, "基準");
+  updateGyroModeButton();
+  setControlStatus(gyroMode === "raw" ? "そのまま" : "基準あり");
 };
 
 const placeMarker = (element, position, xName, yName) => {
@@ -486,7 +508,11 @@ const animatePlayer = (timestamp) => {
 };
 
 const resetStage = () => {
-  clearTilt();
+  if (gyroMode === "relative") {
+    clearTilt();
+  } else {
+    deviceBaseline = null;
+  }
   stageCleared = false;
   resultPanel?.classList.remove("is-open");
   resultPanel?.setAttribute("aria-hidden", "true");
@@ -562,6 +588,13 @@ function handleDeviceOrientation(event) {
   const gamma = Number(event.gamma);
   if (!Number.isFinite(beta) || !Number.isFinite(gamma)) return;
 
+  if (gyroMode === "raw") {
+    deviceBaseline = null;
+    const screenTilt = tiltForScreen(beta, gamma);
+    setTilt(screenTilt.x / rawGyroTiltDegrees, screenTilt.y / rawGyroTiltDegrees, "そのまま");
+    return;
+  }
+
   const angle = screenAngle();
   if (!deviceBaseline || deviceBaseline.angle !== angle) {
     deviceBaseline = { beta, gamma, angle };
@@ -624,11 +657,20 @@ const bindGyroStart = () => {
 
 const resetGyroBaseline = () => {
   if (!deviceGyroActive) return;
-  clearTilt();
+  if (gyroMode === "relative") {
+    clearTilt();
+  } else {
+    deviceBaseline = null;
+  }
 };
 
 resetButton?.addEventListener("click", resetStage);
 resultResetButton?.addEventListener("click", resetStage);
+gyroModeButton?.addEventListener("click", () => {
+  focusGameInput();
+  setGyroMode(gyroMode === "relative" ? "raw" : "relative");
+  void enableDeviceGyro();
+});
 hintButton?.addEventListener("click", () => {
   gameScreen.classList.add("hinting");
   window.setTimeout(() => gameScreen.classList.remove("hinting"), 1600);
@@ -651,6 +693,7 @@ window.addEventListener("pointerdown", focusGameInput);
 renderStage();
 updatePlayer();
 setTilt(0, 0);
+updateGyroModeButton();
 focusGameInput();
 bindGyroStart();
 window.requestAnimationFrame(animatePlayer);

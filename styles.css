@@ -102,6 +102,7 @@ button {
 .playfield,
 .player-layer,
 .hud,
+.gyro-debug,
 .bottom-control,
 .pause-panel,
 .stage-toast {
@@ -1142,6 +1143,43 @@ button {
 
 .bottom-control span {
   display: none;
+}
+
+.gyro-debug {
+  left: 50%;
+  top: 1rem;
+  z-index: 42;
+  transform: translateX(-50%);
+  pointer-events: auto;
+}
+
+.gyro-mode-button {
+  min-width: 9.8rem;
+  border: 1px solid rgba(255, 255, 255, 0.58);
+  border-radius: 999rem;
+  padding: 0.56rem 0.95rem;
+  background:
+    linear-gradient(180deg, rgba(255, 252, 240, 0.86), rgba(226, 244, 246, 0.72));
+  color: rgba(82, 72, 62, 0.95);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.36),
+    0 0.55rem 1.2rem rgba(82, 100, 104, 0.16);
+  font-size: clamp(0.74rem, 1.05vw, 1rem);
+  font-weight: 800;
+  letter-spacing: 0;
+  line-height: 1;
+  cursor: pointer;
+  backdrop-filter: blur(0.25rem);
+}
+
+.gyro-mode-button[aria-pressed="true"] {
+  background:
+    linear-gradient(180deg, rgba(230, 252, 255, 0.9), rgba(193, 232, 244, 0.76));
+  color: rgba(50, 91, 100, 0.98);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.46),
+    0 0 1rem rgba(159, 238, 255, 0.34),
+    0 0.55rem 1.2rem rgba(82, 100, 104, 0.16);
 }
 
 .bottom-left {
