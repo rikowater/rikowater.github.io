@@ -556,8 +556,8 @@ button {
 }
 
 .wind-cell {
-  width: clamp(5.6rem, 7.2vw, 10.5rem);
-  height: clamp(3.8rem, 5.4vw, 7.6rem);
+  width: clamp(5rem, 6.35vw, 9.4rem);
+  height: clamp(3.35rem, 4.75vw, 6.7rem);
   overflow: visible;
   border: 0;
   border-radius: 999rem;
@@ -569,7 +569,7 @@ button {
   mix-blend-mode: screen;
   opacity: 0.98;
   pointer-events: none;
-  transform: translate(-50%, -82%);
+  transform: translate(-50%, -66%);
 }
 
 .wind-cell::before,
@@ -578,8 +578,8 @@ button {
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 128%;
-  height: 0.44rem;
+  width: 118%;
+  height: 0.38rem;
   border-radius: inherit;
   background:
     linear-gradient(90deg, transparent 0%, rgba(224, 255, 255, 0.08) 16%, rgba(255, 255, 255, 0.9) 50%, rgba(224, 255, 255, 0.1) 84%, transparent 100%);
@@ -591,7 +591,7 @@ button {
 }
 
 .wind-cell::after {
-  height: 0.2rem;
+  height: 0.16rem;
   opacity: 0.58;
   animation-delay: 0.46s;
 }
@@ -600,8 +600,8 @@ button {
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 94%;
-  height: clamp(0.16rem, 0.28vw, 0.32rem);
+  width: 88%;
+  height: clamp(0.14rem, 0.24vw, 0.28rem);
   border: 0;
   border-radius: 999rem;
   background:
@@ -619,8 +619,8 @@ button {
   position: absolute;
   right: 4%;
   top: 50%;
-  width: clamp(0.58rem, 0.88vw, 1rem);
-  height: clamp(0.48rem, 0.74vw, 0.86rem);
+  width: clamp(0.5rem, 0.76vw, 0.88rem);
+  height: clamp(0.42rem, 0.66vw, 0.76rem);
   background:
     linear-gradient(90deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.96));
   clip-path: polygon(0 0, 100% 50%, 0 100%, 30% 50%);
@@ -637,16 +637,16 @@ button {
 }
 
 .wind-cell span:nth-child(1) {
-  top: 34%;
+  top: 36%;
 }
 
 .wind-cell span:nth-child(2) {
-  top: 51%;
+  top: 50%;
   animation-delay: 0.34s;
 }
 
 .wind-cell span:nth-child(3) {
-  top: 68%;
+  top: 64%;
   animation-delay: 0.68s;
 }
 
@@ -686,19 +686,19 @@ button {
 
 .wind-up span:nth-child(1),
 .wind-down span:nth-child(1) {
-  left: 34%;
+  left: 36%;
   top: 50%;
 }
 
 .wind-up span:nth-child(2),
 .wind-down span:nth-child(2) {
-  left: 51%;
+  left: 50%;
   top: 50%;
 }
 
 .wind-up span:nth-child(3),
 .wind-down span:nth-child(3) {
-  left: 68%;
+  left: 64%;
   top: 50%;
 }
 
