@@ -75,6 +75,13 @@ const directionLabels = {
   right: "右"
 };
 
+const windVectors = {
+  up: { x: 0, y: -1 },
+  down: { x: 0, y: 1 },
+  left: { x: -1, y: 0 },
+  right: { x: 1, y: 0 }
+};
+
 const boardFrame = {
   left: 10.4,
   top: 4.4,
@@ -261,6 +268,7 @@ let startCell = findCell("B");
 let goalCell = findCell("G");
 let playerPosition = { col: startCell.col, row: startCell.row };
 let collectibles = [];
+let windField = null;
 let maxTravelDistance = 1;
 let travelDistance = 0;
 let stageBuildId = 0;
@@ -276,7 +284,6 @@ let gyroEnableInProgress = false;
 let deviceBaseline = null;
 let lastFrameAt = 0;
 let lastBlockedAt = 0;
-let lastMoveSoundAt = 0;
 let activeDirection = "idle";
 let stageCleared = false;
 let gameOver = false;
@@ -315,6 +322,56 @@ const shortestPathDistance = () => {
   }
 
   return 12;
+};
+
+const createWindField = () => {
+  if (Math.random() < 0.35) return null;
+
+  const candidates = [];
+  for (let row = playableBounds.minRow; row < playableBounds.maxRow; row += 1) {
+    const cells = [];
+    for (let col = playableBounds.minCol; col <= playableBounds.maxCol; col += 1) {
+      [row, row + 1].forEach((cellRow) => {
+        if (cellAt(col, cellRow) === ".") cells.push({ col, row: cellRow });
+      });
+    }
+    if (cells.length >= 7) {
+      candidates.push({
+        orientation: "horizontal",
+        direction: randomChoice(["left", "right"]),
+        cells
+      });
+    }
+  }
+
+  for (let col = playableBounds.minCol; col < playableBounds.maxCol; col += 1) {
+    const cells = [];
+    for (let row = playableBounds.minRow; row <= playableBounds.maxRow; row += 1) {
+      [col, col + 1].forEach((cellCol) => {
+        if (cellAt(cellCol, row) === ".") cells.push({ col: cellCol, row });
+      });
+    }
+    if (cells.length >= 7) {
+      candidates.push({
+        orientation: "vertical",
+        direction: randomChoice(["up", "down"]),
+        cells
+      });
+    }
+  }
+
+  const selected = randomChoice(candidates);
+  if (!selected) return null;
+  return {
+    ...selected,
+    cellKeys: new Set(selected.cells.map(({ col, row }) => `${col}:${row}`))
+  };
+};
+
+const windAtPosition = (position) => {
+  if (!windField) return null;
+  const cell = cellForPosition(position.col, position.row);
+  return windField.cellKeys.has(`${cell.col}:${cell.row}`) ? windField : null;
 };
 
 const createCollectibles = () => {
@@ -449,15 +506,6 @@ const playTone = (frequency, delay = 0, duration = 0.14, gainValue = 0.035, type
 };
 
 const playSound = (name) => {
-  if (name === "move") {
-    const now = performance.now();
-    if (now - lastMoveSoundAt < 170) return;
-    lastMoveSoundAt = now;
-    playTone(560, 0, 0.07, 0.01, "sine");
-    playTone(820, 0.025, 0.09, 0.006, "triangle");
-    return;
-  }
-
   if (name === "collect") {
     playTone(760, 0, 0.13, 0.032, "sine");
     playTone(1120, 0.055, 0.2, 0.024, "triangle");
@@ -524,6 +572,15 @@ const renderStage = () => {
     });
   });
 
+  windField?.cells.forEach(({ col, row }) => {
+    addBoardItem(
+      `wind-cell wind-${windField.direction}`,
+      col,
+      row,
+      "<span></span><span></span><span></span>"
+    );
+  });
+
   collectibles.forEach((item) => {
     if (item.collected) return;
     const stone = addBoardItem("experience-stone has-image", item.col, item.row, assetMarkup(assetPaths.experienceStone));
@@ -531,10 +588,11 @@ const renderStage = () => {
   });
 };
 
-const applyStageState = ({ regenerateCollectibles = false } = {}) => {
+const applyStageState = ({ regenerateCollectibles = false, regenerateWind = false } = {}) => {
   startCell = findCell("B");
   goalCell = findCell("G");
   playerPosition = { col: startCell.col, row: startCell.row };
+  if (regenerateWind) windField = createWindField();
   if (regenerateCollectibles || collectibles.length === 0) {
     collectibles = createCollectibles();
   } else {
@@ -548,7 +606,7 @@ const applyStageState = ({ regenerateCollectibles = false } = {}) => {
 
 const rebuildStage = () => {
   stageMap = generateStageMap();
-  applyStageState({ regenerateCollectibles: true });
+  applyStageState({ regenerateCollectibles: true, regenerateWind: true });
 };
 
 const showToast = (message) => {
@@ -630,20 +688,21 @@ const isAtGoal = () => distanceToGoal() < 0.52;
 const renderResultItems = () => {
   if (!resultItemList) return;
   resultItemList.replaceChildren();
-  const collectedItems = collectibles.filter((item) => item.collected);
+  const collectedCount = collectibles.filter((item) => item.collected).length;
 
-  if (collectedItems.length === 0) {
+  if (collectedCount === 0) {
     const empty = makeElement("result-empty", "span");
     empty.textContent = "なし";
     resultItemList.appendChild(empty);
     return;
   }
 
-  collectedItems.forEach(() => {
-    const item = makeElement("result-item");
-    item.innerHTML = `${assetMarkup(assetPaths.experienceStone)}<span>経験ジェム</span>`;
-    resultItemList.appendChild(item);
-  });
+  const item = makeElement("result-item result-item-compact");
+  item.setAttribute("aria-label", `経験ジェム ${collectedCount}個`);
+  item.innerHTML = `${assetMarkup(assetPaths.experienceStone)}${
+    collectedCount > 1 ? `<span class="result-item-count">&times;${collectedCount}</span>` : ""
+  }`;
+  resultItemList.appendChild(item);
 };
 
 const showResult = () => {
@@ -705,6 +764,17 @@ const showBlockedFeedback = () => {
   popClass(pcBird, "is-blocked", 220);
 };
 
+const showCollectEffect = (item) => {
+  const effect = addBoardItem(
+    "collect-burst",
+    item.col,
+    item.row,
+    "<span>GET</span><i></i><i></i><i></i><i></i>"
+  );
+  effect.style.zIndex = "980";
+  window.setTimeout(() => effect.remove(), 760);
+};
+
 const collectExperienceStones = () => {
   collectibles.forEach((item) => {
     if (item.collected) return;
@@ -713,6 +783,7 @@ const collectExperienceStones = () => {
 
     item.collected = true;
     playSound("collect");
+    showCollectEffect(item);
     const stoneElement = boardLayer.querySelector(`[data-collectible-id="${item.id}"]`);
     stoneElement?.classList.add("is-collected");
     window.setTimeout(() => stoneElement?.remove(), 260);
@@ -803,16 +874,34 @@ const animatePlayer = (timestamp) => {
   lastFrameAt = timestamp;
 
   const moveVector = currentMoveVector();
-  if (!stageCleared && !gameOver && moveVector.strength > 0) {
-    setBirdDirection(dominantDirection(moveVector));
-    const speed = maxCellsPerSecond * moveVector.strength;
-    const moved = tryMovePlayer(moveVector.x * speed * deltaSeconds, moveVector.y * speed * deltaSeconds);
+  const activeWind = windAtPosition(playerPosition);
+  gameScreen?.classList.toggle("is-in-wind", Boolean(activeWind));
+
+  if (!stageCleared && !gameOver && (moveVector.strength > 0 || activeWind)) {
+    const windVector = activeWind ? windVectors[activeWind.direction] : { x: 0, y: 0 };
+    const windWobble = activeWind ? Math.sin(timestamp / 150) * 0.22 : 0;
+    const wobbleVector =
+      activeWind?.orientation === "horizontal"
+        ? { x: 0, y: windWobble }
+        : { x: windWobble, y: 0 };
+    const controlScale = activeWind ? 0.62 : 1;
+    const inputSpeed = maxCellsPerSecond * moveVector.strength * controlScale;
+    const windSpeed = activeWind ? 0.88 : 0;
+    const directionVector = {
+      x: moveVector.x * moveVector.strength + windVector.x * (activeWind ? 0.55 : 0),
+      y: moveVector.y * moveVector.strength + windVector.y * (activeWind ? 0.55 : 0)
+    };
+    const deltaCol = (moveVector.x * inputSpeed + windVector.x * windSpeed + wobbleVector.x) * deltaSeconds;
+    const deltaRow = (moveVector.y * inputSpeed + windVector.y * windSpeed + wobbleVector.y) * deltaSeconds;
+
+    setBirdDirection(dominantDirection(directionVector) || activeDirection);
+    const moved = tryMovePlayer(deltaCol, deltaRow);
     if (moved) {
       stepCount += deltaSeconds;
       pcBird?.classList.add("is-moving");
       window.clearTimeout(animatePlayer.moveTimer);
       animatePlayer.moveTimer = window.setTimeout(() => pcBird?.classList.remove("is-moving"), 120);
-      setControlStatus(dominantDirection(moveVector) || "移動中");
+      setControlStatus(activeWind ? `風: ${directionLabels[activeWind.direction]}` : dominantDirection(moveVector) || "移動中");
     }
   }
 
@@ -1014,7 +1103,7 @@ window.screen?.orientation?.addEventListener?.("change", resetGyroBaseline);
 portraitLockedLandscapeQuery?.addEventListener?.("change", resetGyroBaseline);
 window.addEventListener("pointerdown", focusGameInput);
 
-applyStageState();
+applyStageState({ regenerateCollectibles: true, regenerateWind: true });
 updatePlayer();
 setTilt(0, 0);
 focusGameInput();

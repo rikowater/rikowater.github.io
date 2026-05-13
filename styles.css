@@ -99,6 +99,10 @@ button {
   opacity: 1;
 }
 
+.game-screen.is-in-wind .concept-wash {
+  filter: saturate(1.1) contrast(1.03) brightness(1.04);
+}
+
 .concept-wash {
   position: absolute;
   inset: 0;
@@ -550,6 +554,145 @@ button {
   opacity: 0.5;
 }
 
+.wind-cell {
+  width: clamp(2.55rem, 4.15vw, 6.3rem);
+  height: clamp(2.55rem, 4.15vw, 6.3rem);
+  overflow: hidden;
+  border: 1px solid rgba(177, 248, 255, 0.38);
+  border-radius: clamp(0.35rem, 0.52vw, 0.72rem);
+  background:
+    radial-gradient(circle at 50% 50%, rgba(211, 255, 255, 0.24), transparent 68%),
+    linear-gradient(90deg, rgba(116, 224, 246, 0.08), rgba(255, 246, 187, 0.2), rgba(116, 224, 246, 0.08));
+  box-shadow:
+    inset 0 0 0.85rem rgba(138, 238, 255, 0.2),
+    0 0 0.75rem rgba(147, 235, 255, 0.28);
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+
+.wind-cell::before {
+  content: "";
+  position: absolute;
+  inset: 8%;
+  border-radius: inherit;
+  background:
+    linear-gradient(90deg, transparent, rgba(222, 255, 255, 0.34), transparent);
+  opacity: 0.68;
+  animation: windShimmer 1.9s ease-in-out infinite;
+}
+
+.wind-cell span {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: clamp(0.42rem, 0.7vw, 0.82rem);
+  height: clamp(0.42rem, 0.7vw, 0.82rem);
+  border-top: 0.14rem solid rgba(230, 255, 255, 0.74);
+  border-right: 0.14rem solid rgba(230, 255, 255, 0.74);
+  filter:
+    drop-shadow(0 0 0.18rem rgba(255, 255, 255, 0.72))
+    drop-shadow(0 0 0.44rem rgba(130, 232, 255, 0.58));
+  opacity: 0;
+}
+
+.wind-cell span:nth-child(2) {
+  animation-delay: 0.34s;
+}
+
+.wind-cell span:nth-child(3) {
+  animation-delay: 0.68s;
+}
+
+.wind-right span {
+  transform: translate(-50%, -50%) rotate(45deg);
+  animation: windRight 1.65s linear infinite;
+}
+
+.wind-left span {
+  transform: translate(-50%, -50%) rotate(-135deg);
+  animation: windLeft 1.65s linear infinite;
+}
+
+.wind-up span {
+  transform: translate(-50%, -50%) rotate(-45deg);
+  animation: windUp 1.65s linear infinite;
+}
+
+.wind-down span {
+  transform: translate(-50%, -50%) rotate(135deg);
+  animation: windDown 1.65s linear infinite;
+}
+
+@keyframes windShimmer {
+  0%,
+  100% {
+    opacity: 0.32;
+  }
+  50% {
+    opacity: 0.78;
+  }
+}
+
+@keyframes windRight {
+  0% {
+    opacity: 0;
+    translate: -1.05rem 0;
+  }
+  35%,
+  72% {
+    opacity: 0.92;
+  }
+  100% {
+    opacity: 0;
+    translate: 1.15rem 0;
+  }
+}
+
+@keyframes windLeft {
+  0% {
+    opacity: 0;
+    translate: 1.05rem 0;
+  }
+  35%,
+  72% {
+    opacity: 0.92;
+  }
+  100% {
+    opacity: 0;
+    translate: -1.15rem 0;
+  }
+}
+
+@keyframes windUp {
+  0% {
+    opacity: 0;
+    translate: 0 1.05rem;
+  }
+  35%,
+  72% {
+    opacity: 0.92;
+  }
+  100% {
+    opacity: 0;
+    translate: 0 -1.15rem;
+  }
+}
+
+@keyframes windDown {
+  0% {
+    opacity: 0;
+    translate: 0 -1.05rem;
+  }
+  35%,
+  72% {
+    opacity: 0.92;
+  }
+  100% {
+    opacity: 0;
+    translate: 0 1.15rem;
+  }
+}
+
 .cloud-wall {
   width: clamp(4.25rem, 5.35vw, 7.85rem);
   height: clamp(4.25rem, 5.35vw, 7.85rem);
@@ -690,6 +833,94 @@ button {
   filter:
     drop-shadow(0 0 1.1rem rgba(255, 242, 170, 0.92))
     drop-shadow(0 0 1.8rem rgba(160, 236, 255, 0.48));
+}
+
+.collect-burst {
+  width: clamp(4rem, 5.5vw, 8rem);
+  height: clamp(4rem, 5.5vw, 8rem);
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  animation: collectBurst 760ms ease-out forwards;
+}
+
+.collect-burst span {
+  padding: 0.16rem 0.42rem 0.18rem;
+  border-radius: 999rem;
+  background: rgba(255, 250, 219, 0.82);
+  color: rgba(123, 89, 42, 0.94);
+  font-size: clamp(0.62rem, 0.88vw, 0.92rem);
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.62),
+    0 0 0.85rem rgba(255, 231, 141, 0.72);
+}
+
+.collect-burst i {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0.36rem;
+  height: 0.36rem;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow:
+    0 0 0.45rem rgba(255, 255, 255, 0.92),
+    0 0 0.9rem rgba(255, 221, 105, 0.62);
+}
+
+.collect-burst i:nth-child(2) {
+  --burst-x: -1.35rem;
+  --burst-y: -1.05rem;
+}
+
+.collect-burst i:nth-child(3) {
+  --burst-x: 1.35rem;
+  --burst-y: -0.85rem;
+}
+
+.collect-burst i:nth-child(4) {
+  --burst-x: -1rem;
+  --burst-y: 1.15rem;
+}
+
+.collect-burst i:nth-child(5) {
+  --burst-x: 1.2rem;
+  --burst-y: 1rem;
+}
+
+@keyframes collectBurst {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -56%) scale(0.72);
+  }
+  22% {
+    opacity: 1;
+    transform: translate(-50%, -68%) scale(1.05);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -92%) scale(1.16);
+  }
+}
+
+.collect-burst i {
+  animation: collectSpark 720ms ease-out forwards;
+}
+
+@keyframes collectSpark {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.45);
+  }
+  24% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--burst-x)), calc(-50% + var(--burst-y))) scale(0.18);
+  }
 }
 
 @keyframes itemFloat {
@@ -1325,12 +1556,33 @@ button {
 }
 
 .stage-copy {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.26rem;
   font-size: clamp(0.62rem, 0.82vw, 0.78rem);
   font-weight: 800;
   line-height: 1.2;
   color: rgba(97, 86, 75, 0.82);
   text-shadow: 0 0.08rem 0 rgba(255, 255, 255, 0.62);
   white-space: nowrap;
+}
+
+.stage-goal-inline {
+  width: clamp(1.6rem, 2.15vw, 2.25rem);
+  height: clamp(1.35rem, 1.9vw, 2rem);
+  display: inline-grid;
+  place-items: center;
+  margin: -0.35rem 0 -0.42rem;
+}
+
+.stage-goal-inline img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter:
+    drop-shadow(0 0 0.34rem rgba(175, 240, 255, 0.72))
+    drop-shadow(0 0.12rem 0.16rem rgba(73, 96, 99, 0.16));
 }
 
 .top-menu {
@@ -1575,7 +1827,7 @@ button {
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
-  padding: 0.24rem 0.52rem 0.26rem;
+  padding: 0.2rem 0.46rem 0.22rem;
   border-radius: 999rem;
   background: rgba(255, 251, 235, 0.52);
   box-shadow:
@@ -1585,11 +1837,25 @@ button {
   font-weight: 800;
 }
 
+.result-item-compact {
+  min-width: 3.2rem;
+  justify-content: center;
+  gap: 0.18rem;
+}
+
 .result-item img {
-  width: 1.5rem;
-  height: 1.5rem;
+  width: 1.65rem;
+  height: 1.65rem;
   object-fit: contain;
   filter: drop-shadow(0 0 0.35rem rgba(255, 234, 142, 0.48));
+}
+
+.result-item-count {
+  min-width: 1.25rem;
+  color: rgba(104, 78, 54, 0.9);
+  font-size: clamp(0.78rem, 1vw, 1rem);
+  font-weight: 900;
+  line-height: 1;
 }
 
 .result-empty {
