@@ -509,8 +509,8 @@ button {
 }
 
 .cloud-wall {
-  width: clamp(4.15rem, 5.25vw, 7.7rem);
-  height: clamp(3.7rem, 4.7vw, 6.9rem);
+  width: clamp(4.25rem, 5.35vw, 7.85rem);
+  height: clamp(4.25rem, 5.35vw, 7.85rem);
   transform: translate(-50%, -50%);
   filter:
     drop-shadow(0 0.32rem 0.24rem rgba(84, 102, 104, 0.13))

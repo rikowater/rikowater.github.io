@@ -12,16 +12,14 @@ const resultPanel = document.querySelector("#resultPanel");
 const resultResetButton = document.querySelector("#resultResetButton");
 const stageToast = document.querySelector("#stageToast");
 
-const stageMap = [
-  "   ######    ",
-  "  ##....###  ",
-  " ##..##..G#  ",
-  " #...#..###  ",
-  " #B..#....#  ",
-  " ###..##..#  ",
-  "   #.....##  ",
-  "   ######    "
-];
+const rowCount = 8;
+const colCount = 13;
+const playableBounds = {
+  minCol: 1,
+  maxCol: colCount - 2,
+  minRow: 1,
+  maxRow: rowCount - 2
+};
 
 const featureByCell = {
   B: "start",
@@ -64,8 +62,6 @@ const directionLabels = {
   right: "右"
 };
 
-const rowCount = stageMap.length;
-const colCount = Math.max(...stageMap.map((row) => row.length));
 const boardFrame = {
   left: 10.4,
   top: 4.4,
@@ -96,6 +92,116 @@ const addBoardItem = (className, col, row, innerHTML = "") => {
 };
 
 const assetMarkup = (src) => `<img class="asset-img" src="${src}" alt="" />`;
+
+const randomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+const randomChoice = (items) => items[Math.floor(Math.random() * items.length)];
+
+const inPlayableBounds = (col, row) =>
+  col >= playableBounds.minCol &&
+  col <= playableBounds.maxCol &&
+  row >= playableBounds.minRow &&
+  row <= playableBounds.maxRow;
+
+const createStageGrid = () => {
+  const grid = Array.from({ length: rowCount }, () => Array.from({ length: colCount }, () => " "));
+  for (let row = playableBounds.minRow; row <= playableBounds.maxRow; row += 1) {
+    for (let col = playableBounds.minCol; col <= playableBounds.maxCol; col += 1) {
+      grid[row][col] = "#";
+    }
+  }
+  return grid;
+};
+
+const shuffleDirections = () =>
+  [
+    { x: 1, y: 0 },
+    { x: -1, y: 0 },
+    { x: 0, y: 1 },
+    { x: 0, y: -1 }
+  ].sort(() => Math.random() - 0.5);
+
+const generateStageMap = () => {
+  const grid = createStageGrid();
+  const carvedCells = [];
+  const carvedKeys = new Set();
+  const start = {
+    col: randomInt(playableBounds.minCol, playableBounds.minCol + 1),
+    row: randomInt(playableBounds.minRow + 1, playableBounds.maxRow - 1)
+  };
+  const goal = {
+    col: randomInt(playableBounds.maxCol - 1, playableBounds.maxCol),
+    row: randomInt(playableBounds.minRow, playableBounds.maxRow)
+  };
+
+  const carve = ({ col, row }) => {
+    if (!inPlayableBounds(col, row)) return false;
+    const key = `${col}:${row}`;
+    if (!carvedKeys.has(key)) {
+      carvedKeys.add(key);
+      carvedCells.push({ col, row });
+    }
+    grid[row][col] = ".";
+    return true;
+  };
+
+  let current = { ...start };
+  carve(current);
+
+  for (let guard = 0; guard < 140 && (current.col !== goal.col || current.row !== goal.row); guard += 1) {
+    const preferred = [];
+    if (current.col < goal.col) preferred.push({ x: 1, y: 0 }, { x: 1, y: 0 }, { x: 1, y: 0 });
+    if (current.col > goal.col) preferred.push({ x: -1, y: 0 }, { x: -1, y: 0 });
+    if (current.row < goal.row) preferred.push({ x: 0, y: 1 }, { x: 0, y: 1 });
+    if (current.row > goal.row) preferred.push({ x: 0, y: -1 }, { x: 0, y: -1 });
+
+    const possible = shuffleDirections().filter((direction) =>
+      inPlayableBounds(current.col + direction.x, current.row + direction.y)
+    );
+    const choices = Math.random() < 0.72 && preferred.length > 0 ? preferred : possible;
+    const step = randomChoice(choices.filter((direction) =>
+      inPlayableBounds(current.col + direction.x, current.row + direction.y)
+    ));
+
+    if (!step) break;
+    current = { col: current.col + step.x, row: current.row + step.y };
+    carve(current);
+  }
+
+  while (current.col !== goal.col) {
+    current = { col: current.col + Math.sign(goal.col - current.col), row: current.row };
+    carve(current);
+  }
+  while (current.row !== goal.row) {
+    current = { col: current.col, row: current.row + Math.sign(goal.row - current.row) };
+    carve(current);
+  }
+
+  const targetFloorCount = randomInt(31, 40);
+  let growthGuard = 0;
+  while (carvedCells.length < targetFloorCount && growthGuard < 220) {
+    growthGuard += 1;
+    const seed = randomChoice(carvedCells);
+    const options = shuffleDirections()
+      .map((direction) => ({ col: seed.col + direction.x, row: seed.row + direction.y }))
+      .filter(({ col, row }) => inPlayableBounds(col, row) && grid[row][col] === "#");
+    if (options.length > 0) carve(randomChoice(options));
+  }
+
+  [
+    { col: start.col + 1, row: start.row },
+    { col: start.col, row: start.row - 1 },
+    { col: start.col, row: start.row + 1 },
+    { col: goal.col - 1, row: goal.row },
+    { col: goal.col, row: goal.row - 1 },
+    { col: goal.col, row: goal.row + 1 }
+  ].forEach(carve);
+
+  grid[start.row][start.col] = "B";
+  grid[goal.row][goal.col] = "G";
+  return grid.map((row) => row.join(""));
+};
+
+let stageMap = generateStageMap();
 
 const findCell = (target) => {
   for (let row = 0; row < rowCount; row += 1) {
@@ -137,8 +243,8 @@ const canOccupy = (col, row) => {
   });
 };
 
-const startCell = findCell("B");
-const goalCell = findCell("G");
+let startCell = findCell("B");
+let goalCell = findCell("G");
 let playerPosition = { col: startCell.col, row: startCell.row };
 let stepCount = 0;
 let toastTimer;
@@ -158,33 +264,44 @@ const inputDeadzone = 0.08;
 const maxCellsPerSecond = 3.25;
 const gyroTiltDegrees = 24;
 
-stageMap.forEach((rowString, row) => {
-  [...rowString].forEach((cell, col) => {
-    if (cell === " ") return;
+const renderStage = () => {
+  boardLayer.replaceChildren();
+  stageMap.forEach((rowString, row) => {
+    [...rowString].forEach((cell, col) => {
+      if (cell === " ") return;
 
-    if (cell !== "#") {
-      const type =
-        featureByCell[cell] === "start"
-          ? "start"
-          : featureByCell[cell] === "goal"
-            ? "goal"
-            : "path";
-      addBoardItem(`floor-tile ${type}`, col, row);
-    }
+      if (cell !== "#") {
+        const type =
+          featureByCell[cell] === "start"
+            ? "start"
+            : featureByCell[cell] === "goal"
+              ? "goal"
+              : "path";
+        addBoardItem(`floor-tile ${type}`, col, row);
+      }
 
-    if (cell === "#") {
-      addBoardItem(`cloud-wall ${(col + row) % 4 === 0 ? "soft" : ""} has-image`, col, row, assetMarkup(assetPaths.cloud));
-    }
+      if (cell === "#") {
+        addBoardItem(`cloud-wall ${(col + row) % 4 === 0 ? "soft" : ""} has-image`, col, row, assetMarkup(assetPaths.cloud));
+      }
 
-    if (cell === "B") {
-      addBoardItem("start-pad has-image", col, row, assetMarkup(assetPaths.startPad));
-    }
+      if (cell === "B") {
+        addBoardItem("start-pad has-image", col, row, assetMarkup(assetPaths.startPad));
+      }
 
-    if (cell === "G") {
-      addBoardItem("goal-pad has-image", col, row, assetMarkup(assetPaths.goalPad));
-    }
+      if (cell === "G") {
+        addBoardItem("goal-pad has-image", col, row, assetMarkup(assetPaths.goalPad));
+      }
+    });
   });
-});
+};
+
+const rebuildStage = () => {
+  stageMap = generateStageMap();
+  startCell = findCell("B");
+  goalCell = findCell("G");
+  playerPosition = { col: startCell.col, row: startCell.row };
+  renderStage();
+};
 
 const showToast = (message) => {
   if (!stageToast) return;
@@ -376,7 +493,7 @@ const resetStage = () => {
   pressedKeys.clear();
   keyHoldTimers.forEach((timer) => window.clearTimeout(timer));
   keyHoldTimers.clear();
-  playerPosition = { col: startCell.col, row: startCell.row };
+  rebuildStage();
   stepCount = 0;
   updatePlayer();
   pcBird?.classList.remove("is-goal", "is-blocked", "is-moving");
@@ -531,6 +648,7 @@ window.addEventListener("orientationchange", resetGyroBaseline);
 window.screen?.orientation?.addEventListener?.("change", resetGyroBaseline);
 window.addEventListener("pointerdown", focusGameInput);
 
+renderStage();
 updatePlayer();
 setTilt(0, 0);
 focusGameInput();
