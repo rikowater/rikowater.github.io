@@ -168,9 +168,7 @@ stageMap.forEach((rowString, row) => {
           ? "start"
           : featureByCell[cell] === "goal"
             ? "goal"
-            : featureByCell[cell] === "sun"
-              ? "pad"
-              : "path";
+            : "path";
       addBoardItem(`floor-tile ${type}`, col, row);
     }
 
