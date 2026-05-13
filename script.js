@@ -505,6 +505,24 @@ const playTone = (frequency, delay = 0, duration = 0.14, gainValue = 0.035, type
   oscillator.stop(startAt + duration + 0.04);
 };
 
+const playSweep = (fromFrequency, toFrequency, delay = 0, duration = 0.24, gainValue = 0.032, type = "sine") => {
+  const context = resumeAudio();
+  if (!context) return;
+  const startAt = context.currentTime + delay;
+  const oscillator = context.createOscillator();
+  const gain = context.createGain();
+  oscillator.type = type;
+  oscillator.frequency.setValueAtTime(fromFrequency, startAt);
+  oscillator.frequency.exponentialRampToValueAtTime(toFrequency, startAt + duration);
+  gain.gain.setValueAtTime(0.0001, startAt);
+  gain.gain.exponentialRampToValueAtTime(gainValue, startAt + 0.025);
+  gain.gain.exponentialRampToValueAtTime(0.0001, startAt + duration);
+  oscillator.connect(gain);
+  gain.connect(context.destination);
+  oscillator.start(startAt);
+  oscillator.stop(startAt + duration + 0.04);
+};
+
 const playSound = (name) => {
   if (name === "collect") {
     playTone(760, 0, 0.13, 0.032, "sine");
@@ -519,9 +537,9 @@ const playSound = (name) => {
   }
 
   if (name === "goal") {
-    playTone(620, 0, 0.16, 0.032, "sine");
-    playTone(880, 0.09, 0.18, 0.028, "sine");
-    playTone(1240, 0.18, 0.24, 0.02, "triangle");
+    playSweep(420, 1560, 0, 0.34, 0.036, "sine");
+    playSweep(760, 2240, 0.035, 0.28, 0.018, "triangle");
+    playTone(1680, 0.2, 0.18, 0.018, "sine");
     return;
   }
 
@@ -573,12 +591,13 @@ const renderStage = () => {
   });
 
   windField?.cells.forEach(({ col, row }) => {
-    addBoardItem(
+    const wind = addBoardItem(
       `wind-cell wind-${windField.direction}`,
       col,
       row,
       "<span></span><span></span><span></span>"
     );
+    wind.style.zIndex = String(126 + row * 12 + col);
   });
 
   collectibles.forEach((item) => {
