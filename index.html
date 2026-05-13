@@ -9,7 +9,7 @@
   <body>
     <main class="mock-shell" aria-label="うまく飛べない小鳥のパズルステージ">
       <section class="game-screen" id="gameScreen">
-        <img class="concept-wash" src="./assets/layers/sky-bg.svg" alt="" />
+        <img class="concept-wash" src="./assets/layers/cloud-ruins-bg.png" alt="" />
 
         <div class="sky-paint sky-paint-a" aria-hidden="true"></div>
         <div class="sky-paint sky-paint-b" aria-hidden="true"></div>
@@ -38,8 +38,8 @@
 
         <div class="player-layer" id="playerLayer" aria-live="polite">
           <div class="goal-marker" id="goalMarker" aria-hidden="true"></div>
-          <div class="pc-bird bird-token" id="pcBird" aria-label="操作中の小鳥">
-            <img src="./assets/sprites/bird.svg" alt="" />
+          <div class="pc-bird bird-token" id="pcBird" data-direction="idle" aria-label="操作中の小鳥">
+            <img id="birdSprite" src="./assets/sprites/bird-directions/bird-idle.png" alt="" />
           </div>
         </div>
 

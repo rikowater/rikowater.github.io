@@ -34,6 +34,8 @@ body {
   display: grid;
   place-items: center;
   overflow: hidden;
+  overscroll-behavior: none;
+  touch-action: none;
   background:
     linear-gradient(180deg, #d7ebe9 0%, #f7f0df 100%),
     #d7ebe9;
@@ -59,10 +61,10 @@ button {
 
 .game-screen {
   position: relative;
-  width: min(100vw, 177.777vh);
-  height: min(100vh, 56.25vw);
-  min-width: 960px;
-  min-height: 540px;
+  width: 100vw;
+  height: 100vh;
+  min-width: 0;
+  min-height: 0;
   overflow: hidden;
   isolation: isolate;
   --scene-offset-x: 0px;
@@ -83,8 +85,9 @@ button {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center center;
   opacity: 1;
-  filter: none;
+  filter: saturate(1.07) contrast(1.02) brightness(1.03);
   transform: translate(var(--scene-offset-x), var(--scene-offset-y));
   transition: transform 180ms ease-out;
   z-index: -3;
@@ -349,7 +352,7 @@ button {
 }
 
 .playfield {
-  inset: 0.65rem 1.35rem 0.75rem;
+  inset: clamp(0.25rem, 1.1vh, 0.8rem) clamp(1rem, 4.3vw, 5.5rem) clamp(0.35rem, 1.2vh, 0.9rem);
   z-index: 15;
   opacity: 1;
   mix-blend-mode: normal;
@@ -359,7 +362,7 @@ button {
 }
 
 .player-layer {
-  inset: 0.65rem 1.35rem 0.75rem;
+  inset: clamp(0.25rem, 1.1vh, 0.8rem) clamp(1rem, 4.3vw, 5.5rem) clamp(0.35rem, 1.2vh, 0.9rem);
   z-index: 34;
   pointer-events: none;
 }
@@ -450,9 +453,9 @@ button {
 }
 
 .floor-tile {
-  width: clamp(3.8rem, 5.75vw, 6.7rem);
-  height: clamp(3.35rem, 5.05vw, 5.9rem);
-  border-radius: 1.25rem;
+  width: clamp(3rem, 5.5vw, 8.2rem);
+  height: clamp(2.45rem, 4.75vw, 7.05rem);
+  border-radius: clamp(0.65rem, 1.05vw, 1.35rem);
   background:
     radial-gradient(circle at 34% 24%, rgba(255, 255, 255, 0.68), transparent 34%),
     linear-gradient(145deg, rgba(249, 255, 245, 0.95), rgba(211, 234, 219, 0.9) 54%, rgba(143, 176, 153, 0.78));
@@ -506,9 +509,12 @@ button {
 }
 
 .cloud-wall {
-  width: clamp(4.9rem, 6.8vw, 7.9rem);
-  height: clamp(4.1rem, 5.75vw, 6.8rem);
-  filter: drop-shadow(0 0.45rem 0.38rem rgba(84, 102, 104, 0.16));
+  width: clamp(5.2rem, 7.1vw, 10.8rem);
+  height: clamp(4.9rem, 6.7vw, 10rem);
+  transform: translate(-50%, -58%);
+  filter:
+    drop-shadow(0 0.5rem 0.36rem rgba(84, 102, 104, 0.16))
+    drop-shadow(0 0 0.55rem rgba(255, 255, 255, 0.32));
 }
 
 .cloud-wall .puff {
@@ -601,7 +607,25 @@ button {
 }
 
 .cloud-wall.soft {
-  opacity: 0.9;
+  opacity: 0.94;
+}
+
+.start-pad {
+  width: clamp(5.8rem, 8.2vw, 12.6rem);
+  height: clamp(5.2rem, 7.6vw, 11.4rem);
+  transform: translate(-48%, -56%);
+  filter:
+    drop-shadow(0 0 0.7rem rgba(255, 228, 117, 0.72))
+    drop-shadow(0 0.42rem 0.35rem rgba(87, 75, 63, 0.18));
+}
+
+.goal-pad {
+  width: clamp(5.7rem, 7.7vw, 11.8rem);
+  height: clamp(5.9rem, 8.1vw, 12.4rem);
+  transform: translate(-50%, -62%);
+  filter:
+    drop-shadow(0 0 0.8rem rgba(172, 239, 255, 0.78))
+    drop-shadow(0 0.45rem 0.36rem rgba(71, 98, 101, 0.2));
 }
 
 .vortex {
@@ -733,11 +757,11 @@ button {
 }
 
 .bird-token {
-  width: clamp(5.4rem, 7.15vw, 8.2rem);
-  height: clamp(5.4rem, 7.15vw, 8.2rem);
+  width: clamp(5.8rem, 7.2vw, 11rem);
+  height: clamp(5.8rem, 7.2vw, 11rem);
   transform:
-    translate(-50%, -62%)
-    rotate(calc(var(--lean, 0) * 5deg));
+    translate(-50%, -56%)
+    rotate(calc(var(--lean, 0) * 3deg));
   filter:
     drop-shadow(0 0.45rem 0.35rem rgba(93, 77, 61, 0.22))
     drop-shadow(0 0 0.55rem rgba(255, 238, 164, 0.38));
@@ -746,8 +770,8 @@ button {
 
 .pc-bird {
   position: absolute;
-  width: clamp(4.3rem, 5.7vw, 6.8rem);
-  height: clamp(4.3rem, 5.7vw, 6.8rem);
+  width: clamp(5.4rem, 7.4vw, 11.3rem);
+  height: clamp(5.4rem, 7.4vw, 11.3rem);
   left: var(--player-x, 26%);
   top: var(--player-y, 58%);
   opacity: 1;
@@ -760,6 +784,19 @@ button {
   height: 100%;
   object-fit: contain;
   pointer-events: none;
+}
+
+.pc-bird[data-direction="left"],
+.pc-bird[data-direction="right"] {
+  width: clamp(6.2rem, 8.6vw, 13rem);
+  height: clamp(4.8rem, 6.7vw, 10.2rem);
+}
+
+.pc-bird[data-direction="up"],
+.pc-bird[data-direction="down"],
+.pc-bird[data-direction="idle"] {
+  width: clamp(5.3rem, 7.2vw, 10.8rem);
+  height: clamp(5.3rem, 7.2vw, 10.8rem);
 }
 
 .pc-bird.is-moving {
@@ -811,17 +848,18 @@ button {
 
 @keyframes resetPop {
   0% {
-    transform: translate(-50%, -62%) scale(0.86);
+    transform: translate(-50%, -56%) scale(0.86);
   }
   55% {
-    transform: translate(-50%, -68%) scale(1.08);
+    transform: translate(-50%, -62%) scale(1.08);
   }
   100% {
-    transform: translate(-50%, -62%) scale(1);
+    transform: translate(-50%, -56%) scale(1);
   }
 }
 
 .goal-marker {
+  display: none;
   position: absolute;
   left: var(--goal-x, 72%);
   top: var(--goal-y, 29%);
@@ -1202,7 +1240,7 @@ button {
   animation-duration: 900ms;
 }
 
-.game-screen.hinting .goal-feather {
+.game-screen.hinting .goal-pad {
   animation: featherGlow 900ms ease-in-out infinite alternate;
 }
 
@@ -1216,15 +1254,13 @@ button {
 
 @media (max-width: 1100px), (max-height: 640px) {
   .game-screen {
-    min-width: 0;
-    min-height: 0;
     width: 100vw;
     height: 100vh;
   }
 
   .playfield,
   .player-layer {
-    inset: 0.45rem 0.8rem 0.5rem;
+    inset: 0.25rem 0.7rem 0.35rem;
   }
 
   .action-button {
@@ -1236,18 +1272,19 @@ button {
 
 @media (orientation: portrait) {
   body {
-    overflow: auto;
+    overflow: hidden;
   }
 
   .mock-shell {
+    height: 100vh;
     min-height: 100vh;
-    padding: 1rem;
+    padding: 0;
   }
 
   .game-screen {
     width: 100vw;
-    height: 56.25vw;
-    max-height: 100vh;
+    height: 100vh;
+    max-height: none;
   }
 
 }

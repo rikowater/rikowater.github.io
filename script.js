@@ -6,6 +6,7 @@ const menuButton = document.querySelector(".menu-button");
 const pausePanel = document.querySelector("#pausePanel");
 const resumeButton = document.querySelector("#resumeButton");
 const pcBird = document.querySelector("#pcBird");
+const birdSprite = document.querySelector("#birdSprite");
 const goalMarker = document.querySelector("#goalMarker");
 const stageToast = document.querySelector("#stageToast");
 
@@ -29,12 +30,21 @@ const featureByCell = {
 };
 
 const assetPaths = {
-  cloud: "./assets/tiles/cloud-wall.svg",
+  cloud: "./assets/tiles/cloud-wall-generated.png",
+  startPad: "./assets/gimmicks/start-pad.png",
+  goalPad: "./assets/gimmicks/goal-pad.png",
   crystal: "./assets/gimmicks/crystal.svg",
   vortex: "./assets/gimmicks/vortex.svg",
   sun: "./assets/gimmicks/sun-pad.svg",
-  goalFeather: "./assets/gimmicks/goal-feather.svg",
   spark: "./assets/gimmicks/spark.svg"
+};
+
+const birdSprites = {
+  idle: "./assets/sprites/bird-directions/bird-idle.png",
+  up: "./assets/sprites/bird-directions/bird-up.png",
+  down: "./assets/sprites/bird-directions/bird-down.png",
+  left: "./assets/sprites/bird-directions/bird-left.png",
+  right: "./assets/sprites/bird-directions/bird-right.png"
 };
 
 const keyToVector = {
@@ -62,10 +72,10 @@ const directionLabels = {
 const rowCount = stageMap.length;
 const colCount = Math.max(...stageMap.map((row) => row.length));
 const boardFrame = {
-  left: 7.2,
-  top: 6.2,
-  width: 85.6,
-  height: 85.2
+  left: 10.4,
+  top: 4.4,
+  width: 79.2,
+  height: 91.2
 };
 
 const makeElement = (className, tag = "div") => {
@@ -145,6 +155,7 @@ let gyroEnableInProgress = false;
 let deviceBaseline = null;
 let lastFrameAt = 0;
 let lastBlockedAt = 0;
+let activeDirection = "idle";
 const pressedKeys = new Set();
 const keyHoldTimers = new Map();
 const inputDeadzone = 0.08;
@@ -171,6 +182,10 @@ stageMap.forEach((rowString, row) => {
       addBoardItem(`cloud-wall ${(col + row) % 4 === 0 ? "soft" : ""} has-image`, col, row, assetMarkup(assetPaths.cloud));
     }
 
+    if (cell === "B") {
+      addBoardItem("start-pad has-image", col, row, assetMarkup(assetPaths.startPad));
+    }
+
     if (cell === "C") {
       addBoardItem("crystal has-image", col, row, assetMarkup(assetPaths.crystal));
       addBoardItem("spark has-image", col + 0.32, row - 0.22, assetMarkup(assetPaths.spark));
@@ -186,7 +201,7 @@ stageMap.forEach((rowString, row) => {
     }
 
     if (cell === "G") {
-      addBoardItem("goal-feather has-image", col, row, assetMarkup(assetPaths.goalFeather));
+      addBoardItem("goal-pad has-image", col, row, assetMarkup(assetPaths.goalPad));
       addBoardItem("spark has-image", col + 0.3, row - 0.18, assetMarkup(assetPaths.spark));
     }
   });
@@ -228,6 +243,14 @@ const updatePlayer = () => {
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 const clampTilt = (value) => clamp(value, -1, 1);
 
+const setBirdDirection = (direction) => {
+  const nextDirection = birdSprites[direction] ? direction : "idle";
+  if (nextDirection === activeDirection) return;
+  activeDirection = nextDirection;
+  if (pcBird) pcBird.dataset.direction = nextDirection;
+  if (birdSprite) birdSprite.src = birdSprites[nextDirection];
+};
+
 const setTilt = (nextX, nextY, source = "実機") => {
   tiltX = clampTilt(nextX);
   tiltY = clampTilt(nextY);
@@ -235,6 +258,7 @@ const setTilt = (nextX, nextY, source = "実機") => {
   gameScreen.style.setProperty("--scene-offset-y", `${(-tiltY * 3.5).toFixed(2)}px`);
   if (pcBird) pcBird.style.setProperty("--lean", tiltX.toFixed(3));
   const directionName = dominantDirection({ x: tiltX, y: tiltY });
+  if (directionName) setBirdDirection(directionName);
   setControlStatus(directionName ? `${source}: ${directionLabels[directionName]}` : "待機");
 };
 
@@ -314,6 +338,7 @@ const tryMovePlayer = (deltaCol, deltaRow) => {
 const pulseKeyboardMove = (key) => {
   const keyVector = keyToVector[key];
   if (!keyVector) return;
+  setBirdDirection(dominantDirection(keyVector));
   const moved = tryMovePlayer(keyVector.x * 0.12, keyVector.y * 0.12);
   if (!moved) return;
   updatePlayer();
@@ -339,6 +364,7 @@ const animatePlayer = (timestamp) => {
 
   const moveVector = currentMoveVector();
   if (moveVector.strength > 0) {
+    setBirdDirection(dominantDirection(moveVector));
     const speed = maxCellsPerSecond * moveVector.strength;
     const moved = tryMovePlayer(moveVector.x * speed * deltaSeconds, moveVector.y * speed * deltaSeconds);
     if (moved) {
