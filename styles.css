@@ -130,6 +130,7 @@ button {
 .bottom-control,
 .pause-panel,
 .gameover-panel,
+.start-panel,
 .stage-toast {
   position: absolute;
 }
@@ -1669,6 +1670,7 @@ button {
   white-space: nowrap;
 }
 
+.stage-item-inline,
 .stage-goal-inline {
   width: clamp(1.6rem, 2.15vw, 2.25rem);
   height: clamp(1.35rem, 1.9vw, 2rem);
@@ -1677,10 +1679,26 @@ button {
   margin: -0.35rem 0 -0.42rem;
 }
 
+.stage-item-inline {
+  width: clamp(1.2rem, 1.6vw, 1.75rem);
+  height: clamp(1.2rem, 1.6vw, 1.75rem);
+  margin: -0.22rem 0 -0.3rem;
+}
+
+.stage-item-inline img,
 .stage-goal-inline img {
   width: 100%;
   height: 100%;
   object-fit: contain;
+}
+
+.stage-item-inline img {
+  filter:
+    drop-shadow(0 0 0.28rem rgba(255, 232, 136, 0.62))
+    drop-shadow(0 0.1rem 0.13rem rgba(92, 75, 53, 0.12));
+}
+
+.stage-goal-inline img {
   filter:
     drop-shadow(0 0 0.34rem rgba(175, 240, 255, 0.72))
     drop-shadow(0 0.12rem 0.16rem rgba(73, 96, 99, 0.16));
@@ -1810,6 +1828,96 @@ button {
   transition:
     opacity 220ms ease,
     backdrop-filter 220ms ease;
+}
+
+.start-panel {
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  padding: clamp(1rem, 3vw, 2.6rem);
+  background:
+    radial-gradient(circle at 50% 42%, rgba(255, 250, 232, 0.46), transparent 32%),
+    linear-gradient(180deg, rgba(222, 238, 234, 0.14), rgba(43, 63, 67, 0.36));
+  opacity: 0;
+  pointer-events: none;
+  backdrop-filter: blur(0.18rem);
+  transition:
+    opacity 220ms ease,
+    backdrop-filter 220ms ease;
+}
+
+.start-panel.is-open {
+  opacity: 1;
+  pointer-events: auto;
+  backdrop-filter: blur(0.32rem);
+}
+
+.start-inner {
+  width: min(42rem, 78vw);
+  min-height: min(17rem, 52vh);
+  display: grid;
+  grid-template-columns: minmax(6rem, 11rem) minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(1rem, 2.4vw, 1.7rem);
+  border: 0;
+  border-radius: 0.85rem;
+  padding: clamp(1rem, 2.3vw, 1.55rem) clamp(1.25rem, 3vw, 2rem);
+  background:
+    radial-gradient(circle at 24% 25%, rgba(255, 251, 230, 0.88), transparent 36%),
+    linear-gradient(180deg, rgba(255, 250, 235, 0.9), rgba(232, 246, 245, 0.8));
+  color: rgba(88, 68, 51, 0.96);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.64),
+    0 0 2rem rgba(185, 238, 245, 0.38),
+    0 1.2rem 3.4rem rgba(45, 66, 69, 0.24);
+  cursor: pointer;
+}
+
+.start-inner:focus-visible {
+  outline: 0.18rem solid rgba(255, 222, 128, 0.9);
+  outline-offset: 0.22rem;
+}
+
+.start-guide-image {
+  width: 100%;
+  max-height: 12rem;
+  justify-self: center;
+  object-fit: contain;
+  border-radius: 0.7rem;
+  box-shadow:
+    0 0.6rem 1.4rem rgba(94, 82, 68, 0.12),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+}
+
+.start-copy {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.24rem;
+  text-align: center;
+  font-size: clamp(1.15rem, 2.1vw, 2rem);
+  font-weight: 900;
+  line-height: 1.45;
+  text-shadow: 0 0.1rem 0 rgba(255, 255, 255, 0.68);
+}
+
+.start-goal-inline {
+  width: clamp(2.35rem, 4.4vw, 4.1rem);
+  height: clamp(2rem, 3.8vw, 3.5rem);
+  display: inline-grid;
+  place-items: center;
+  margin: -0.38rem 0.06rem -0.54rem;
+}
+
+.start-goal-inline img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter:
+    drop-shadow(0 0 0.6rem rgba(181, 245, 255, 0.72))
+    drop-shadow(0 0.16rem 0.24rem rgba(74, 92, 93, 0.16));
 }
 
 .gameover-panel {
@@ -2079,6 +2187,21 @@ button {
     height: 2.65rem;
   }
 
+  .start-inner {
+    width: min(34rem, 80vw);
+    min-height: min(13rem, 58vh);
+    grid-template-columns: minmax(4.8rem, 8rem) minmax(0, 1fr);
+    gap: 0.9rem;
+    padding: 0.9rem 1.2rem;
+  }
+
+  .start-guide-image {
+    max-height: 8rem;
+  }
+
+  .start-copy {
+    font-size: clamp(0.98rem, 2.2vw, 1.35rem);
+  }
 }
 
 @media (orientation: portrait) and (max-width: 900px) {

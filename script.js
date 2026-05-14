@@ -14,6 +14,8 @@ const resultNextButton = document.querySelector("#resultNextButton");
 const resultItemList = document.querySelector("#resultItemList");
 const gameoverPanel = document.querySelector("#gameoverPanel");
 const gameoverRetryButton = document.querySelector("#gameoverRetryButton");
+const startPanel = document.querySelector("#startPanel");
+const startPanelButton = document.querySelector("#startPanelButton");
 const stageToast = document.querySelector("#stageToast");
 const distanceHud = document.querySelector("#distanceHud");
 const distanceBarFill = document.querySelector("#distanceBarFill");
@@ -289,6 +291,7 @@ let lastBlockedAt = 0;
 let activeDirection = "idle";
 let stageCleared = false;
 let gameOver = false;
+let startPanelOpen = Boolean(startPanel);
 let audioContext;
 let bgmStarted = false;
 let audioAssetsPrimed = false;
@@ -572,9 +575,9 @@ const playSweep = (fromFrequency, toFrequency, delay = 0, duration = 0.24, gainV
 
 const playSound = (name) => {
   if (name === "collect") {
-    playTone(760, 0, 0.13, 0.032, "sine");
-    playTone(1120, 0.055, 0.2, 0.024, "triangle");
-    playTone(1480, 0.16, 0.2, 0.014, "sine");
+    playTone(760, 0, 0.13, 0.05, "sine");
+    playTone(1120, 0.055, 0.2, 0.038, "triangle");
+    playTone(1480, 0.16, 0.2, 0.024, "sine");
     return;
   }
 
@@ -793,6 +796,17 @@ const showGameOver = () => {
   playSound("gameover");
 };
 
+const closeStartPanel = () => {
+  if (!startPanelOpen) return;
+  startPanelOpen = false;
+  startPanel?.classList.remove("is-open");
+  startPanel?.setAttribute("aria-hidden", "true");
+  gameScreen?.classList.remove("is-start-open", "is-modal-open");
+  focusGameInput();
+  resumeAudio();
+  void enableDeviceGyro();
+};
+
 const currentKeyboardVector = () => {
   const vector = { x: 0, y: 0 };
   pressedKeys.forEach((key) => {
@@ -938,6 +952,12 @@ const animatePlayer = (timestamp) => {
   const deltaSeconds = Math.min(0.04, (timestamp - lastFrameAt) / 1000);
   lastFrameAt = timestamp;
 
+  if (startPanelOpen) {
+    updatePlayer();
+    window.requestAnimationFrame(animatePlayer);
+    return;
+  }
+
   const moveVector = currentMoveVector();
   const activeWind = windAtPosition(playerPosition);
   gameScreen?.classList.toggle("is-in-wind", Boolean(activeWind));
@@ -999,6 +1019,7 @@ const resetStage = ({ next = false } = {}) => {
   stageCleared = false;
   gameOver = false;
   gameScreen?.classList.remove("is-modal-open");
+  if (startPanelOpen) gameScreen?.classList.add("is-modal-open", "is-start-open");
   resultPanel?.classList.remove("is-open");
   resultPanel?.setAttribute("aria-hidden", "true");
   gameoverPanel?.classList.remove("is-open");
@@ -1025,6 +1046,7 @@ const resetStage = ({ next = false } = {}) => {
 window.addEventListener("keydown", (event) => {
   if (!keyToVector[event.key]) return;
   event.preventDefault();
+  if (startPanelOpen) closeStartPanel();
   resumeAudio();
   pressedKeys.add(event.key);
   pulseKeyboardMove(event.key);
@@ -1153,6 +1175,7 @@ resetButton?.addEventListener("click", resetStage);
 resultResetButton?.addEventListener("click", resetStage);
 resultNextButton?.addEventListener("click", () => resetStage({ next: true }));
 gameoverRetryButton?.addEventListener("click", resetStage);
+startPanelButton?.addEventListener("click", closeStartPanel);
 menuButton?.addEventListener("click", () => {
   focusGameInput();
   toggleStageMenu();
@@ -1171,6 +1194,7 @@ window.addEventListener("pointerdown", focusGameInput);
 applyStageState({ regenerateCollectibles: true, regenerateWind: true });
 updatePlayer();
 setTilt(0, 0);
+if (startPanelOpen) gameScreen?.classList.add("is-start-open", "is-modal-open");
 focusGameInput();
 bindGyroStart();
 window.requestAnimationFrame(animatePlayer);

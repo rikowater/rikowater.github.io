@@ -47,7 +47,10 @@
         <div class="stage-info" aria-live="polite">
           <div class="stage-label" id="stageLabel">ステージ99</div>
           <div class="stage-copy" aria-label="経験ジェムを集めながら ゴールを目指そう！">
-            経験ジェムを集めながら
+            <span class="stage-item-inline" aria-hidden="true">
+              <img src="./assets/gimmicks/experience-stone.png" alt="" />
+            </span>
+            を集めながら
             <span class="stage-goal-inline" aria-hidden="true">
               <img src="./assets/gimmicks/goal-pad.png" alt="" />
             </span>
@@ -104,6 +107,19 @@
             <h1>体力が尽きてしまった</h1>
             <button id="gameoverRetryButton" type="button">もう一度チャレンジ</button>
           </div>
+        </div>
+
+        <div class="start-panel is-open" id="startPanel" aria-hidden="false">
+          <button class="start-inner" id="startPanelButton" type="button" aria-label="スマホを傾けて、ヒヨをゴールまで導こう！">
+            <img class="start-guide-image" src="./assets/ui/tilt-guide.png" alt="" />
+            <span class="start-copy">
+              スマホを傾けて、ヒヨを
+              <span class="start-goal-inline" aria-hidden="true">
+                <img src="./assets/gimmicks/goal-pad.png" alt="" />
+              </span>
+              まで導こう！
+            </span>
+          </button>
         </div>
 
         <div class="stage-toast" id="stageToast" role="status" aria-live="polite"></div>
