@@ -15,6 +15,9 @@ const resultItemList = document.querySelector("#resultItemList");
 const gameoverPanel = document.querySelector("#gameoverPanel");
 const gameoverRetryButton = document.querySelector("#gameoverRetryButton");
 const startPanel = document.querySelector("#startPanel");
+const startSizeControl = document.querySelector("#startSizeControl");
+const startSizeRange = document.querySelector("#startSizeRange");
+const startSizeValue = document.querySelector("#startSizeValue");
 const stageToast = document.querySelector("#stageToast");
 const distanceHud = document.querySelector("#distanceHud");
 const distanceBarFill = document.querySelector("#distanceBarFill");
@@ -711,6 +714,30 @@ const updatePlayer = () => {
 
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 const clampTilt = (value) => clamp(value, -1, 1);
+const startPopupSizeKey = "birdStartPopupSize";
+const startPopupSizeDefault = 100;
+
+const readStartPopupSize = () => {
+  try {
+    return Number(window.localStorage?.getItem(startPopupSizeKey)) || startPopupSizeDefault;
+  } catch (error) {
+    return startPopupSizeDefault;
+  }
+};
+
+const setStartPopupSize = (value, { persist = false } = {}) => {
+  const size = Math.round(clamp(Number(value) || startPopupSizeDefault, 80, 125));
+  gameScreen?.style.setProperty("--start-popup-scale", (size / 100).toFixed(2));
+  if (startSizeRange) startSizeRange.value = String(size);
+  if (startSizeValue) startSizeValue.textContent = `${size}%`;
+
+  if (!persist) return;
+  try {
+    window.localStorage?.setItem(startPopupSizeKey, String(size));
+  } catch (error) {
+    // Ignore storage errors in private browsing or file previews.
+  }
+};
 
 const setBirdDirection = (direction) => {
   const nextDirection = birdSprites[direction] ? direction : "idle";
@@ -1043,6 +1070,8 @@ const resetStage = ({ next = false } = {}) => {
 };
 
 window.addEventListener("keydown", (event) => {
+  if (startPanelOpen && event.target?.closest?.(".start-size-control")) return;
+
   if (startPanelOpen && (event.key === "Enter" || event.key === " ")) {
     event.preventDefault();
     closeStartPanel();
@@ -1180,7 +1209,14 @@ resetButton?.addEventListener("click", resetStage);
 resultResetButton?.addEventListener("click", resetStage);
 resultNextButton?.addEventListener("click", () => resetStage({ next: true }));
 gameoverRetryButton?.addEventListener("click", resetStage);
-startPanel?.addEventListener("click", closeStartPanel);
+startSizeRange?.addEventListener("input", (event) => setStartPopupSize(event.currentTarget.value, { persist: true }));
+["pointerdown", "click", "touchstart", "keydown"].forEach((eventName) => {
+  startSizeControl?.addEventListener(eventName, (event) => event.stopPropagation());
+});
+startPanel?.addEventListener("click", (event) => {
+  if (event.target?.closest?.(".start-size-control")) return;
+  closeStartPanel();
+});
 menuButton?.addEventListener("click", () => {
   focusGameInput();
   toggleStageMenu();
@@ -1199,6 +1235,7 @@ window.addEventListener("pointerdown", focusGameInput);
 applyStageState({ regenerateCollectibles: true, regenerateWind: true });
 updatePlayer();
 setTilt(0, 0);
+setStartPopupSize(readStartPopupSize());
 if (startPanelOpen) gameScreen?.classList.add("is-start-open", "is-modal-open");
 focusGameInput();
 bindGyroStart();

@@ -71,6 +71,7 @@ button {
   isolation: isolate;
   --scene-offset-x: 0px;
   --scene-offset-y: 0px;
+  --start-popup-scale: 1;
   background:
     radial-gradient(ellipse at 24% 22%, rgba(255, 248, 218, 0.9) 0 13%, transparent 32%),
     radial-gradient(ellipse at 74% 14%, rgba(255, 247, 229, 0.78) 0 11%, transparent 29%),
@@ -1878,6 +1879,9 @@ button {
     0 0 2rem rgba(185, 238, 245, 0.38),
     0 1.2rem 3.4rem rgba(45, 66, 69, 0.24);
   pointer-events: none;
+  transform: scale(var(--start-popup-scale));
+  transform-origin: center center;
+  transition: transform 120ms ease;
 }
 
 .start-panel:focus-visible {
@@ -1957,6 +1961,50 @@ button {
     0 0.1rem 0.2rem rgba(61, 71, 70, 0.34),
     0 0 0.8rem rgba(255, 246, 218, 0.4);
   pointer-events: none;
+}
+
+.start-size-control {
+  position: absolute;
+  right: clamp(0.8rem, 2vw, 1.4rem);
+  bottom: clamp(0.8rem, 2vw, 1.4rem);
+  z-index: 2;
+  width: min(18rem, 31vw);
+  display: grid;
+  gap: 0.45rem;
+  padding: 0.72rem 0.86rem 0.82rem;
+  border-radius: 0.78rem;
+  background:
+    linear-gradient(180deg, rgba(255, 251, 239, 0.88), rgba(230, 246, 246, 0.76));
+  color: rgba(87, 68, 52, 0.94);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.62),
+    0 0.62rem 1.4rem rgba(43, 62, 65, 0.16);
+  cursor: default;
+}
+
+.start-size-control label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.7rem;
+  font-size: clamp(0.7rem, 1vw, 0.9rem);
+  font-weight: 900;
+  line-height: 1;
+  text-shadow: 0 0.08rem 0 rgba(255, 255, 255, 0.72);
+}
+
+.start-size-control output {
+  min-width: 2.8rem;
+  text-align: right;
+  color: rgba(123, 86, 50, 0.96);
+  font-variant-numeric: tabular-nums;
+}
+
+.start-size-control input {
+  width: 100%;
+  min-width: 0;
+  accent-color: #d99042;
+  cursor: pointer;
 }
 
 .gameover-panel {
@@ -2255,6 +2303,16 @@ button {
 
   .start-tap-copy {
     font-size: clamp(0.75rem, 1.55vw, 0.98rem);
+  }
+
+  .start-size-control {
+    width: min(14.8rem, 32vw);
+    padding: 0.55rem 0.68rem 0.62rem;
+    gap: 0.32rem;
+  }
+
+  .start-size-control label {
+    font-size: clamp(0.62rem, 1.25vw, 0.78rem);
   }
 }
 
