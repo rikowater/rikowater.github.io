@@ -291,6 +291,7 @@ let stageCleared = false;
 let gameOver = false;
 let audioContext;
 let bgmStarted = false;
+let audioAssetsPrimed = false;
 const goalSoundClip = new Audio(assetPaths.goalSound);
 goalSoundClip.preload = "auto";
 goalSoundClip.volume = 0.82;
@@ -497,8 +498,15 @@ const playAudioClip = (clip) => {
   if (playPromise?.catch) playPromise.catch(() => {});
 };
 
+const primeAudioAssets = () => {
+  if (audioAssetsPrimed) return;
+  goalSoundClip.load();
+  bgmClip.load();
+  audioAssetsPrimed = true;
+};
+
 const startBgm = () => {
-  if (bgmStarted || !bgmClip.paused) {
+  if (!bgmClip.paused) {
     bgmStarted = true;
     return;
   }
@@ -518,13 +526,12 @@ const startBgm = () => {
 };
 
 const resumeAudio = () => {
+  primeAudioAssets();
+  startBgm();
   const AudioContextClass = window.AudioContext || window.webkitAudioContext;
   if (!AudioContextClass) return null;
   if (!audioContext) audioContext = new AudioContextClass();
   if (audioContext.state === "suspended") void audioContext.resume();
-  goalSoundClip.load();
-  bgmClip.load();
-  startBgm();
   return audioContext;
 };
 
