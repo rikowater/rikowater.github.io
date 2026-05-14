@@ -43,7 +43,8 @@ const assetPaths = {
   startPad: "./assets/gimmicks/start-pad.png",
   goalPad: "./assets/gimmicks/goal-pad.png",
   experienceStone: "./assets/gimmicks/experience-stone.png",
-  goalSound: "./assets/sounds/clear-shuin.mp3"
+  goalSound: "./assets/sounds/clear-shuin.mp3",
+  bgm: "./assets/sounds/moss-and-wander.mp3"
 };
 
 const birdSprites = {
@@ -289,9 +290,14 @@ let activeDirection = "idle";
 let stageCleared = false;
 let gameOver = false;
 let audioContext;
+let bgmStarted = false;
 const goalSoundClip = new Audio(assetPaths.goalSound);
 goalSoundClip.preload = "auto";
 goalSoundClip.volume = 0.82;
+const bgmClip = new Audio(assetPaths.bgm);
+bgmClip.loop = true;
+bgmClip.preload = "auto";
+bgmClip.volume = 0.28;
 const pressedKeys = new Set();
 const keyHoldTimers = new Map();
 const inputDeadzone = 0.08;
@@ -491,12 +497,34 @@ const playAudioClip = (clip) => {
   if (playPromise?.catch) playPromise.catch(() => {});
 };
 
+const startBgm = () => {
+  if (bgmStarted || !bgmClip.paused) {
+    bgmStarted = true;
+    return;
+  }
+
+  const playPromise = bgmClip.play();
+  if (playPromise?.then) {
+    playPromise
+      .then(() => {
+        bgmStarted = true;
+      })
+      .catch(() => {
+        bgmStarted = false;
+      });
+  } else {
+    bgmStarted = true;
+  }
+};
+
 const resumeAudio = () => {
   const AudioContextClass = window.AudioContext || window.webkitAudioContext;
   if (!AudioContextClass) return null;
   if (!audioContext) audioContext = new AudioContextClass();
   if (audioContext.state === "suspended") void audioContext.resume();
   goalSoundClip.load();
+  bgmClip.load();
+  startBgm();
   return audioContext;
 };
 
