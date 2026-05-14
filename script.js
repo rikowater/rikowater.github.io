@@ -14,10 +14,6 @@ const resultNextButton = document.querySelector("#resultNextButton");
 const resultItemList = document.querySelector("#resultItemList");
 const gameoverPanel = document.querySelector("#gameoverPanel");
 const gameoverRetryButton = document.querySelector("#gameoverRetryButton");
-const startPanel = document.querySelector("#startPanel");
-const startSizeControl = document.querySelector("#startSizeControl");
-const startSizeRange = document.querySelector("#startSizeRange");
-const startSizeValue = document.querySelector("#startSizeValue");
 const stageToast = document.querySelector("#stageToast");
 const distanceHud = document.querySelector("#distanceHud");
 const distanceBarFill = document.querySelector("#distanceBarFill");
@@ -293,7 +289,6 @@ let lastBlockedAt = 0;
 let activeDirection = "idle";
 let stageCleared = false;
 let gameOver = false;
-let startPanelOpen = Boolean(startPanel);
 let audioContext;
 let bgmStarted = false;
 let audioAssetsPrimed = false;
@@ -714,30 +709,6 @@ const updatePlayer = () => {
 
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 const clampTilt = (value) => clamp(value, -1, 1);
-const startPopupSizeKey = "birdStartPopupSize";
-const startPopupSizeDefault = 100;
-
-const readStartPopupSize = () => {
-  try {
-    return Number(window.localStorage?.getItem(startPopupSizeKey)) || startPopupSizeDefault;
-  } catch (error) {
-    return startPopupSizeDefault;
-  }
-};
-
-const setStartPopupSize = (value, { persist = false } = {}) => {
-  const size = Math.round(clamp(Number(value) || startPopupSizeDefault, 80, 125));
-  gameScreen?.style.setProperty("--start-popup-scale", (size / 100).toFixed(2));
-  if (startSizeRange) startSizeRange.value = String(size);
-  if (startSizeValue) startSizeValue.textContent = `${size}%`;
-
-  if (!persist) return;
-  try {
-    window.localStorage?.setItem(startPopupSizeKey, String(size));
-  } catch (error) {
-    // Ignore storage errors in private browsing or file previews.
-  }
-};
 
 const setBirdDirection = (direction) => {
   const nextDirection = birdSprites[direction] ? direction : "idle";
@@ -820,17 +791,6 @@ const showGameOver = () => {
   gameoverPanel?.setAttribute("aria-hidden", "false");
   pcBird?.classList.remove("is-moving");
   playSound("gameover");
-};
-
-const closeStartPanel = () => {
-  if (!startPanelOpen) return;
-  startPanelOpen = false;
-  startPanel?.classList.remove("is-open");
-  startPanel?.setAttribute("aria-hidden", "true");
-  gameScreen?.classList.remove("is-start-open", "is-modal-open");
-  focusGameInput();
-  resumeAudio();
-  void enableDeviceGyro();
 };
 
 const currentKeyboardVector = () => {
@@ -978,12 +938,6 @@ const animatePlayer = (timestamp) => {
   const deltaSeconds = Math.min(0.04, (timestamp - lastFrameAt) / 1000);
   lastFrameAt = timestamp;
 
-  if (startPanelOpen) {
-    updatePlayer();
-    window.requestAnimationFrame(animatePlayer);
-    return;
-  }
-
   const moveVector = currentMoveVector();
   const activeWind = windAtPosition(playerPosition);
   gameScreen?.classList.toggle("is-in-wind", Boolean(activeWind));
@@ -1045,7 +999,6 @@ const resetStage = ({ next = false } = {}) => {
   stageCleared = false;
   gameOver = false;
   gameScreen?.classList.remove("is-modal-open");
-  if (startPanelOpen) gameScreen?.classList.add("is-modal-open", "is-start-open");
   resultPanel?.classList.remove("is-open");
   resultPanel?.setAttribute("aria-hidden", "true");
   gameoverPanel?.classList.remove("is-open");
@@ -1070,17 +1023,8 @@ const resetStage = ({ next = false } = {}) => {
 };
 
 window.addEventListener("keydown", (event) => {
-  if (startPanelOpen && event.target?.closest?.(".start-size-control")) return;
-
-  if (startPanelOpen && (event.key === "Enter" || event.key === " ")) {
-    event.preventDefault();
-    closeStartPanel();
-    return;
-  }
-
   if (!keyToVector[event.key]) return;
   event.preventDefault();
-  if (startPanelOpen) closeStartPanel();
   resumeAudio();
   pressedKeys.add(event.key);
   pulseKeyboardMove(event.key);
@@ -1209,14 +1153,6 @@ resetButton?.addEventListener("click", resetStage);
 resultResetButton?.addEventListener("click", resetStage);
 resultNextButton?.addEventListener("click", () => resetStage({ next: true }));
 gameoverRetryButton?.addEventListener("click", resetStage);
-startSizeRange?.addEventListener("input", (event) => setStartPopupSize(event.currentTarget.value, { persist: true }));
-["pointerdown", "click", "touchstart", "keydown"].forEach((eventName) => {
-  startSizeControl?.addEventListener(eventName, (event) => event.stopPropagation());
-});
-startPanel?.addEventListener("click", (event) => {
-  if (event.target?.closest?.(".start-size-control")) return;
-  closeStartPanel();
-});
 menuButton?.addEventListener("click", () => {
   focusGameInput();
   toggleStageMenu();
@@ -1235,8 +1171,6 @@ window.addEventListener("pointerdown", focusGameInput);
 applyStageState({ regenerateCollectibles: true, regenerateWind: true });
 updatePlayer();
 setTilt(0, 0);
-setStartPopupSize(readStartPopupSize());
-if (startPanelOpen) gameScreen?.classList.add("is-start-open", "is-modal-open");
 focusGameInput();
 bindGyroStart();
 window.requestAnimationFrame(animatePlayer);
