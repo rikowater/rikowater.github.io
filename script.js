@@ -15,7 +15,6 @@ const resultItemList = document.querySelector("#resultItemList");
 const gameoverPanel = document.querySelector("#gameoverPanel");
 const gameoverRetryButton = document.querySelector("#gameoverRetryButton");
 const startPanel = document.querySelector("#startPanel");
-const startPanelButton = document.querySelector("#startPanelButton");
 const stageToast = document.querySelector("#stageToast");
 const distanceHud = document.querySelector("#distanceHud");
 const distanceBarFill = document.querySelector("#distanceBarFill");
@@ -1044,6 +1043,12 @@ const resetStage = ({ next = false } = {}) => {
 };
 
 window.addEventListener("keydown", (event) => {
+  if (startPanelOpen && (event.key === "Enter" || event.key === " ")) {
+    event.preventDefault();
+    closeStartPanel();
+    return;
+  }
+
   if (!keyToVector[event.key]) return;
   event.preventDefault();
   if (startPanelOpen) closeStartPanel();
@@ -1175,7 +1180,7 @@ resetButton?.addEventListener("click", resetStage);
 resultResetButton?.addEventListener("click", resetStage);
 resultNextButton?.addEventListener("click", () => resetStage({ next: true }));
 gameoverRetryButton?.addEventListener("click", resetStage);
-startPanelButton?.addEventListener("click", closeStartPanel);
+startPanel?.addEventListener("click", closeStartPanel);
 menuButton?.addEventListener("click", () => {
   focusGameInput();
   toggleStageMenu();
